@@ -1,4 +1,4 @@
-CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_skew_hist(tb_name text, tb_size bigint) 
+CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_skew_hist(tb_name text, tb_size bigint, p_calc_size boolean default null)
 	RETURNS text
 	LANGUAGE plpgsql
 	SECURITY DEFINER
@@ -13,12 +13,19 @@ declare
     exe text = '';
 begin
     set search_path to s_grnplm_vd_hr_edp_srv_wf;
-    
-    if (select max(pa.attnum) from pg_catalog.pg_attribute pa where pa.attrelid = tb_name::regclass::oid) <= 300 
-            and tb_size between 1 and replace('100 000 000 000', ' ', '')::int8
-    then
+
+    if p_calc_size is null then
+        -- авто: считать если столбцов <= 300 и размер в допустимом диапазоне
+        if (select max(pa.attnum) from pg_catalog.pg_attribute pa where pa.attrelid = tb_name::regclass::oid) <= 300
+                and tb_size between 1 and replace('100 000 000 000', ' ', '')::int8
+        then
+            size_txt = 'sum(pg_column_size(a.*))';
+        else
+            size_txt = 'null::int8';
+        end if;
+    elsif p_calc_size then
         size_txt = 'sum(pg_column_size(a.*))';
-    else 
+    else
         size_txt = 'null::int8';
     end if;
 
@@ -87,4 +94,4 @@ end;
 $body$
 EXECUTE ON ANY;
 
-COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_skew_hist(text, bigint) IS 'Вычисляет и сохраняет метрики перекоса (min/max/avg/std по сегментам) таблицы в tb_log_skew';
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_skew_hist(text, bigint, boolean) IS 'Вычисляет и сохраняет метрики перекоса (min/max/avg/std по сегментам) таблицы в tb_log_skew. p_calc_size: null=авто (<=300 колонок и размер<=100GB), true=всегда считать data_size, false=не считать';
