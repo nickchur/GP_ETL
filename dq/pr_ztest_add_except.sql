@@ -80,3 +80,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.pr_ztest_add_except(text, date) IS 'Добавляет дату в список исключений z-теста для указанного объекта';

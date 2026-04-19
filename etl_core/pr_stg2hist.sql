@@ -146,3 +146,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_stg2hist(text, text, text[]) IS 'Переносит данные из STG в hist-таблицу с дедупликацией по хэшу строки';

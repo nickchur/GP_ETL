@@ -45,4 +45,5 @@ END;
 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_cc_get_main_okved(text) IS 'Возвращает наиболее частое название ОКВЭД для заданного кода или диапазона кодов';

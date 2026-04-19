@@ -53,3 +53,4 @@ comment on column s_grnplm_vd_hr_edp_srv_dq.vw_ztest.error is 'Описание 
 comment on column s_grnplm_vd_hr_edp_srv_dq.vw_ztest.z_cfg is 'Конфиг Z-теста (JSON)';
 comment on column s_grnplm_vd_hr_edp_srv_dq.vw_ztest.z_except is 'Список исключений по датам';
 comment on column s_grnplm_vd_hr_edp_srv_dq.vw_ztest.z_error is 'Список ошибок по датам';
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_dq.vw_ztest IS 'Конфигурация и статистика z-тестов по объектам с историческими данными и исключениями';

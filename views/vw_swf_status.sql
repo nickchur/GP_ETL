@@ -29,3 +29,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_wf.vw_swf_status AS
      LEFT JOIN s_grnplm_vd_hr_edp_srv_wf.vw_swf n ON (((s.rn_td = n.rn_td) AND (n.todo = true))))
   ORDER BY s.rn_td;
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_swf_status IS 'Сводный статус super-workflow с последними результатами выполнения';

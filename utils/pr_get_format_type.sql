@@ -18,4 +18,5 @@ end;
 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_get_format_type(text, text) IS 'Возвращает базовое имя типа колонки таблицы без модификаторов точности';

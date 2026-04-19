@@ -154,4 +154,5 @@ exception when OTHERS then
 end; 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_fld_stat(name, bigint) IS 'Собирает детальную профилировочную статистику по всем колонкам таблицы и сохраняет в tb_log_fld_stat';

@@ -98,3 +98,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_wf.vw_log_ctl_wf AS
                   GROUP BY a_2.id, a_2.profile, a_2.stat_id) a_1
           GROUP BY a_1.id) b ON ((a.id = b.id)));
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_log_ctl_wf IS 'Сводный лог CTL-workflow с агрегированными статусами и временными метками';

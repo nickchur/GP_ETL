@@ -26,4 +26,5 @@ begin
 end;
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_error(integer, text, text, text, text) IS 'Регистрирует ошибку workflow с деталями исключения в tb_log_workflow и tb_log_workflow_err';

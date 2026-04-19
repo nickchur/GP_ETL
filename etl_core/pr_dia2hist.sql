@@ -145,3 +145,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_dia2hist(text, text, text[]) IS 'Переносит данные из DIA-таблицы в STG-hist с дедупликацией по хэшу строки';

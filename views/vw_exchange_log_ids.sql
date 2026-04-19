@@ -49,3 +49,4 @@ comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log_ids.alive is 'Тек
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log_ids.status is 'Результат выполнения';
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log_ids.status_log is 'Лог статуса';
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log_ids.msg is 'Дополнительное сообщение';
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log_ids IS 'Лог обменов с идентификаторами и статусами выполнения workflow';

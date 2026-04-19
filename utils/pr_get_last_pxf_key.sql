@@ -70,4 +70,5 @@ begin
 end;
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_get_last_pxf_key(integer, text, text, text) IS 'Определяет последнее значение ключевого поля для инкрементальной загрузки из PXF с учётом истории ошибок ztest';

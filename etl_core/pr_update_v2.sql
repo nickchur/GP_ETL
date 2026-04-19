@@ -453,3 +453,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_update_v2(integer, text, text, text, text[], text, timestamp without time zone) IS 'Обновляет STG-таблицу из DIA-источника по шагу партиции и ключам распределения (v2)';

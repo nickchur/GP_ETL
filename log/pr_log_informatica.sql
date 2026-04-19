@@ -36,4 +36,5 @@ exception when OTHERS then
 end; 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_informatica(text, text, integer) IS 'Логирует событие Informatica: устанавливает application_name и записывает действие в tb_log_workflow';

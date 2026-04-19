@@ -80,3 +80,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.pr_ztest_recalc(text, date) IS 'Пересчитывает z-тест для указанного объекта начиная с заданной даты';

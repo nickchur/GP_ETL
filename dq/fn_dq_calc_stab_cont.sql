@@ -142,3 +142,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.fn_dq_calc_stab_cont(character varying, character varying, character varying, date, date, character varying, character varying, character varying, character varying, character varying, character varying, integer, character varying, integer) IS 'Вычисляет стабильность непрерывного поля между эталонной и целевой выборками и возвращает метрику PSI';

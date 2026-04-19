@@ -57,4 +57,5 @@ begin
 end;
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_dia_chk_cnt(text, boolean) IS 'Проверяет полноту архивов DIA-таблицы по количеству строк и архивов; при rollback=true бросает исключение';

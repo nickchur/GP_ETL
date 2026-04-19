@@ -161,3 +161,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_check_bd4ds(text) IS 'Проверяет бизнес-даты таблиц BD4DS по шаблонам из tb_bd4ds и формирует HTML-отчёт';

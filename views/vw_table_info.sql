@@ -8,3 +8,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_dq.vw_table_info AS
   WHERE ((1 = 1) AND (n.nspname ~~ ('s_grnplm_vd_hr_edp%'::name)::text))
   ORDER BY pg_total_relation_size((c.oid)::regclass) DESC;
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_dq.vw_table_info IS 'Информация о таблицах и партициях схем с размерами, количеством строк и датами обновления';

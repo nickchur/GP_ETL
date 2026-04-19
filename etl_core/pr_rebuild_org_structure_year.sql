@@ -391,3 +391,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_rebuild_org_structure_year(integer) IS 'Пересобирает орг. структуру за указанный год в dnf_org_tree';

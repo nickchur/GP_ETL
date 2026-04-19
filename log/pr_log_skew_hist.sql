@@ -86,4 +86,5 @@ exception when OTHERS then
 end;
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_skew_hist(text, bigint) IS 'Вычисляет и сохраняет метрики перекоса (min/max/avg/std по сегментам) таблицы в tb_log_skew';

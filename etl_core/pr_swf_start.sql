@@ -128,3 +128,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_start(text, text) IS 'Запускает указанный sub-workflow в рамках super-workflow';

@@ -26,3 +26,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.fn_dq_calc_not_in_range(character varying, character varying, character varying, character varying, character varying, character varying) IS 'Подсчитывает количество значений поля таблицы, выходящих за пределы допустимого диапазона';

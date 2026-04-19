@@ -12,3 +12,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_wf.vw_resgroup_status AS
     pg_resgroup r
   WHERE (s.groupid = r.oid);
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_resgroup_status IS 'Текущий статус ресурсных групп Greenplum с метриками использования ресурсов';

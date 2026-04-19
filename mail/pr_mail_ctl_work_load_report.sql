@@ -556,3 +556,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_work_load_report(text[]) IS 'Формирует и отправляет отчёт о нагрузке на CTL-систему';

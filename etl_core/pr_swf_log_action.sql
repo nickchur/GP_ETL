@@ -40,3 +40,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_log_action(text, text, json, integer, timestamp without time zone) IS 'Записывает действие super-workflow в tb_swf_chk_log и возвращает идентификатор записи';

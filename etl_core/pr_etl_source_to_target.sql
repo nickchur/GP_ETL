@@ -132,3 +132,5 @@ END;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_etl_source_to_target(text) IS 'Выполняет ETL-процесс переноса данных из источника в цель согласно конфигурации tb_etl_config';

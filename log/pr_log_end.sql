@@ -42,4 +42,5 @@ exception when OTHERS then
 end;
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_end(integer, text, text, text, text) IS 'Регистрирует успешное завершение workflow, записывает статистику по таблице, возвращает log_id';

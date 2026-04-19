@@ -67,3 +67,4 @@ comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log_keys.auto is 'Авт
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log_keys.alive is 'Текущий статус';
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log_keys.status is 'Результат';
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log_keys.status_log is 'Лог процесса';
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log_keys IS 'Лог обменов с ключами инкремента и статусами по каждой записи';

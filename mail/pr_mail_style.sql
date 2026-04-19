@@ -207,3 +207,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_style(json, boolean) IS 'Возвращает JSON с CSS-стилями для HTML-таблиц в письмах';

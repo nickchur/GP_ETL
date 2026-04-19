@@ -55,4 +55,6 @@ end;
 
 $body$
 EXECUTE ON ANY;
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_get_func(text, integer) IS 'Возвращает исходный код функции или конкретную строку по номеру из PG_EXCEPTION_CONTEXT';
 	

@@ -72,3 +72,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.pr_dq_nonnull_volume(text, json) IS 'Рассчитывает метрики заполненности и объёма таблицы по DQ-правилам и возвращает результат в JSON';

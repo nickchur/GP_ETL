@@ -18,3 +18,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.fn_dq_calculate_interval_dt_from(date, character varying, integer) IS 'Вычисляет начальную дату интервала на основе контрольной даты, типа и количества интервалов';

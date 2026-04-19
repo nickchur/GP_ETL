@@ -168,3 +168,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(text) IS 'Запускает все активные super-workflow или конкретный по маске имени';

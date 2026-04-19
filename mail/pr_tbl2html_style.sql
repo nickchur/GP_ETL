@@ -52,3 +52,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_tbl2html_style(text, json, text, text, text) IS 'Применяет JSON-стили к HTML-тегу по ключу/значению/типу для форматирования писем';

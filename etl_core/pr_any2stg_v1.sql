@@ -221,3 +221,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_any2stg_v1(text, text, text, text[], boolean) IS 'Дедупликация и загрузка данных из произвольного источника в STG-таблицу по хэшу строки';

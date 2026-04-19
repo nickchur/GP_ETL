@@ -256,3 +256,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.pr_dq_check(text, text, json) IS 'Запускает DQ-проверки по маске метрики и таблицы, формирует HTML-отчёт и возвращает статус';

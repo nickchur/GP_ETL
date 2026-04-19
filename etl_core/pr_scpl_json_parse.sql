@@ -1243,3 +1243,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_scpl_json_parse() IS 'Разбирает JSON-схемы из tb_scpl_json_schemas по типам событий и раскладывает в целевые таблицы SCPL';

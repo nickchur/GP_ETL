@@ -58,3 +58,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_log_clean(text, date) IS 'Очищает устаревшие записи из лог-таблиц super-workflow старше указанной даты';

@@ -11,3 +11,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_dq.vw_dq_log AS
      JOIN s_grnplm_vd_hr_edp_srv_dq.tb_dq_log b ON ((a.id = b.parent)))
   ORDER BY a.id DESC;
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_dq.vw_dq_log IS 'Журнал выполнения DQ-проверок с метриками, результатами и деталями ошибок';

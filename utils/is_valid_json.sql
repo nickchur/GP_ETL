@@ -15,4 +15,5 @@ end;
 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.is_valid_json(text) IS 'Проверяет, является ли строка валидным JSON, возвращает true/false';

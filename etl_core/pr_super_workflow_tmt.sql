@@ -21,3 +21,5 @@ as $body$
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_super_workflow_tmt() IS 'Завершает зависшие workflow-процессы по таймауту';

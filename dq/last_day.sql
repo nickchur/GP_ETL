@@ -4,8 +4,9 @@ CREATE FUNCTION s_grnplm_vd_hr_edp_srv_dq.last_day(start_date date)
 	IMMUTABLE
 as $body$
 
-	select (s_grnplm_vd_hr_edp_srv_dq.first_day((start_date + interval '1 month')::date) - interval '1 day')::date;
+	SELECT (date_trunc('MONTH', start_date) + INTERVAL '1 MONTH - 1 day')::date;
 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.last_day(date) IS 'Возвращает последний день месяца для заданной даты';

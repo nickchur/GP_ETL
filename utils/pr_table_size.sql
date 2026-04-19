@@ -36,4 +36,5 @@ exception when OTHERS then
 end;
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_table_size(name) IS 'Возвращает суммарный размер таблицы с учётом всех партиций в байтах';

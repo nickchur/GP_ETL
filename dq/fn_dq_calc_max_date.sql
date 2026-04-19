@@ -48,3 +48,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.fn_dq_calc_max_date(date, character varying, character varying, character varying, character varying) IS 'Вычисляет отклонение максимальной даты поля таблицы от контрольной даты и возвращает разницу в днях';

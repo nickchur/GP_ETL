@@ -19,4 +19,5 @@ end;
 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.try_cast2jsonb(text, boolean) IS 'Безопасное приведение текста к jsonb с попыткой нормализации кавычек, возвращает NULL при ошибке';

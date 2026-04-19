@@ -55,4 +55,5 @@ begin
 end;
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_check_mail_mapping() IS 'Проверяет маппинг почты на наличие дублей на критических датах';

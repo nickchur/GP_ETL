@@ -27,3 +27,5 @@ END;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_etl_get_config(text) IS 'Возвращает запись конфигурации ETL-процесса из tb_etl_config по имени workflow';

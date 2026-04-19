@@ -24,3 +24,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_get_next(timestamp without time zone, interval, timestamp without time zone, timestamp without time zone) IS 'Вычисляет следующее время запуска workflow по расписанию на основе интервала и последнего выполнения';

@@ -120,3 +120,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_smdtodia_v4(text, text, bigint) IS 'Загружает данные из PXF-источника в DIA-таблицу с инкрементом по max_id (v4)';

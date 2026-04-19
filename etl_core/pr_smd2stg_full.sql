@@ -101,3 +101,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_smd2stg_full(text, text, text, text, text) IS 'Полная перезагрузка из PXF через DIA в STG с проверкой наличия новых данных';

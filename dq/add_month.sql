@@ -9,3 +9,4 @@ as $body$
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.add_month(date, integer) IS 'Прибавляет указанное количество месяцев к дате, возвращает результирующую дату';

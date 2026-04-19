@@ -17,3 +17,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_wf.vw_swf_ctl_log AS
      LEFT JOIN s_grnplm_vd_hr_edp_srv_wf.tb_swf_ctl_log b ON ((a.id = b.parent)))
   WHERE (a.parent IS NULL);
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_swf_ctl_log IS 'Журнал CTL-итераций super-workflow с состоянием и временными метками';

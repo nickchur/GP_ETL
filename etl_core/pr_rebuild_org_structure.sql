@@ -378,3 +378,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_rebuild_org_structure() IS 'Полностью пересобирает орг. структуру на каждый день с 2015 года в dnf_org_tree';

@@ -24,3 +24,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_wf.vw_swf__log AS
   WHERE (a.parent IS NULL)
   ORDER BY s_grnplm_vd_hr_edp_srv_wf.try_cast2timestamp(a.wf_action) DESC, a.ts DESC;
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_swf__log IS 'Полный лог super-workflow с событиями начала и окончания, отсортированный по времени';

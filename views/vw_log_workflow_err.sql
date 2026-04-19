@@ -30,3 +30,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_wf.vw_log_workflow_err AS
           GROUP BY b_1.log_id) b ON ((a.log_id = b.log_id)))
   ORDER BY a.log_id DESC;
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_log_workflow_err IS 'Журнал ошибок workflow с деталями исключений, контекстом и подсказками';

@@ -37,4 +37,5 @@ as $body$
 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_get_part(text, text, integer, date, date) IS 'Возвращает список партиций таблицы, пересекающихся с заданным диапазоном дат';

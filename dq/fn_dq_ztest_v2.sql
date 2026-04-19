@@ -77,3 +77,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.fn_dq_ztest_v2(text, text, text, date, date, integer) IS 'Выполняет z-тест для колонки таблицы за диапазон дат (v2) и возвращает статус проверки';

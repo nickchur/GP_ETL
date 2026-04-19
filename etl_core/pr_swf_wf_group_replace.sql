@@ -142,3 +142,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_wf_group_replace(text) IS 'Заменяет группы workflow в конфигурации super-workflow на новую версию';

@@ -38,4 +38,5 @@ END
 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_check_null(text) IS 'Возвращает количество NULL-значений по каждой колонке таблицы (текстовые поля учитывают пустые строки)';

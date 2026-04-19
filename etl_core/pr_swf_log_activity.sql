@@ -34,3 +34,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_log_activity(text, interval) IS 'Возвращает список активных сессий БД, ожидающих указанный паттерн запроса, с возможным ожиданием';

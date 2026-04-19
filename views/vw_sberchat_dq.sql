@@ -16,3 +16,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_dq.vw_sberchat_dq AS
   GROUP BY (date_trunc('month'::text, tb_sberchat.log_time))::date
   ORDER BY (date_trunc('month'::text, tb_sberchat.log_time))::date DESC;
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_dq.vw_sberchat_dq IS 'Ежемесячная статистика объёма сообщений SberChat для DQ-мониторинга';

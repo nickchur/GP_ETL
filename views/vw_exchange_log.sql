@@ -60,3 +60,4 @@ comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log.time is 'Время 
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log.ts is 'Время первой записи';
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log.completed is 'Флаг завершения обмена';
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log.wf_data is 'Диагностика в формате JSON';
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_exchange_log IS 'Детальный лог обменов с данными запросов и ответов в JSON';

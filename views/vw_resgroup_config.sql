@@ -22,3 +22,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_wf.vw_resgroup_config AS
      LEFT JOIN pg_resgroupcapability t6 ON (((g.oid = t6.resgroupid) AND (t6.reslimittype = 6))))
      LEFT JOIN pg_resgroupcapability t7 ON (((g.oid = t7.resgroupid) AND (t7.reslimittype = 7))));
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_resgroup_config IS 'Конфигурация ресурсных групп Greenplum с лимитами по CPU, памяти и параллелизму';

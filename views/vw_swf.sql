@@ -201,3 +201,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_wf.vw_swf AS
                           GROUP BY a_2.wf_name) c ON ((a_1.wf_name = c.wait_id)))) a) b
   ORDER BY (COALESCE((b.wf_end)::timestamp with time zone, now()) >= now()), b.todo DESC, b.rn;
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_swf IS 'Текущее состояние всех super-workflow с расписанием, прогрессом и статусом активности';

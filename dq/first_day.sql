@@ -9,3 +9,4 @@ as $body$
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.first_day(date) IS 'Возвращает первый день месяца для заданной даты';

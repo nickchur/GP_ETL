@@ -31,4 +31,5 @@ exception when OTHERS then
 end; 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_work(integer, text, text, text) IS 'Записывает отладочное событие в tb_log_work с временной меткой и именем приложения';

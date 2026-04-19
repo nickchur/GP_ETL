@@ -91,3 +91,4 @@ comment on column s_grnplm_vd_hr_edp_srv_wf.vw_log_workflow.cnt is 'Число �
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_log_workflow.min is 'Минимум';
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_log_workflow.max is 'Максимум';
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_log_workflow.stable is 'Стабильность (std/avg)';
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_log_workflow IS 'Журнал выполнения workflow со статистикой таблиц и результатами ztest';

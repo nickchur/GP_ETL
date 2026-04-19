@@ -7,3 +7,5 @@ CREATE VIEW s_grnplm_vd_hr_edp_srv_wf.vw_log_ctl AS
    FROM s_grnplm_vd_hr_edp_srv_wf.tb_log_ctl a
   ORDER BY a.id DESC, a.obj, a.url, a.ts DESC;
 
+
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_log_ctl IS 'Актуальный лог CTL-событий с уникальными записями по объекту и URL';

@@ -98,3 +98,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_smd2stg_add(text, text, text, text) IS 'Инкрементальная загрузка новых записей из PXF через DIA в STG по ключевому полю';

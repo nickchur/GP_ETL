@@ -11,3 +11,5 @@ END;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_etl_truncate_dia(text) IS 'Обёртка для усечения DIA-источника через конфигурацию tb_etl_config';

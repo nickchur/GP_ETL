@@ -23,3 +23,4 @@ comment on column s_grnplm_vd_hr_edp_srv_wf.vw_log_ctl_entity.path is 'Путь 
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_log_ctl_entity.storage is 'Хранилище';
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_log_ctl_entity.parentid is 'Родительская сущность';
 comment on column s_grnplm_vd_hr_edp_srv_wf.vw_log_ctl_entity.msg is 'Полные данные (JSON)';
+COMMENT ON VIEW s_grnplm_vd_hr_edp_srv_wf.vw_log_ctl_entity IS 'Справочник CTL-сущностей с уникальными идентификаторами и родительскими связями';

@@ -256,3 +256,6 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.pr_ztest_all_diff(text, date, bigint, integer, timestamp without time zone) IS 'Запускает z-тест для всех метрик объекта на указанную дату и возвращает JSON с результатами';
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.pr_ztest_all_diff(text, date[], bigint, integer, timestamp without time zone) IS 'Запускает z-тест для всех метрик объекта по массиву дат и возвращает JSON с результатами';

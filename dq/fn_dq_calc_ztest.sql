@@ -258,3 +258,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.fn_dq_calc_ztest(text, text, text, text, text, text, integer) IS 'Выполняет z-тест для колонки таблицы за указанный период и возвращает статус проверки';

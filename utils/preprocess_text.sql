@@ -1,4 +1,4 @@
-CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.preproccess_text(inp text, trimed integer DEFAULT 1) 
+CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.preprocess_text(inp text, trimed integer DEFAULT 1) 
 	RETURNS text
 	LANGUAGE plpgsql
 	VOLATILE
@@ -18,4 +18,5 @@ as $body$
 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.preprocess_text(text, integer) IS 'Предобрабатывает текст: возвращает обрезанную строку если содержит буквы или цифры, иначе NULL';

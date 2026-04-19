@@ -15,4 +15,5 @@ end;
 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.try_cast2timestamp(text, boolean) IS 'Безопасное приведение текста к timestamp, возвращает NULL при ошибке';

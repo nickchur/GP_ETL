@@ -24,3 +24,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_check_ctl(text, text, json) IS 'Обёртка над pr_check_etl с etype=true по умолчанию для CTL-проверок';
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_check_ctl(text, text, text, text, text, boolean, timestamp without time zone) IS 'Обёртка над pr_check_etl с etype=true по умолчанию для CTL-проверок';

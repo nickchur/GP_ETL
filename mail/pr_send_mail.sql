@@ -81,3 +81,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_send_mail(text, integer, boolean) IS 'Отправляет накопленное HTML-письмо через внешний mail-сервис';

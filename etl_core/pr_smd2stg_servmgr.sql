@@ -103,3 +103,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_smd2stg_servmgr(text) IS 'Полная перезагрузка данных ServiceManager из PXF через DIA в STG';

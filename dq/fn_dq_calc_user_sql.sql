@@ -50,3 +50,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_dq.fn_dq_calc_user_sql(character varying, character varying, character varying, date, character varying, integer) IS 'Выполняет произвольный SQL-запрос пользователя за указанный интервал и сохраняет результат в DQ-лог';

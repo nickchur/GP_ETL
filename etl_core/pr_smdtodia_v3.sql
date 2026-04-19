@@ -134,3 +134,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_smdtodia_v3(integer, text, text, integer) IS 'Загружает данные из PXF-источника в DIA-таблицу порциями с инкрементом по from_id (v3)';

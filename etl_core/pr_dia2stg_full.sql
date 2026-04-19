@@ -106,3 +106,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_dia2stg_full(text, text, text, text, text) IS 'Полная перезагрузка DIA → STG с опциональной инкрементальной фильтрацией по ключевому полю';

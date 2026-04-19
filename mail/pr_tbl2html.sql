@@ -120,3 +120,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_tbl2html(text, text, text, json) IS 'Конвертирует результат запроса к таблице в HTML с применением стилей';

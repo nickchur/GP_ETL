@@ -43,3 +43,5 @@ END;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_etl_truncate_source(text) IS 'Усекает таблицу-источник ETL-процесса если в конфигурации установлен флаг source_truncate';

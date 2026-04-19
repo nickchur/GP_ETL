@@ -55,3 +55,5 @@ BEGIN
     RETURN sign || rtrim(rtrim(size_value::TEXT, '0'), '.') || ' ' || units[i + 1];
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+
+COMMENT ON FUNCTION readable_size(numeric, integer, text) IS 'Форматирует числовой размер в удобочитаемую строку с единицами измерения (B/KB/MB/GB или тыс/млн/млрд)';

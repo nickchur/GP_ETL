@@ -123,3 +123,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_rebuild_movement_detail() IS 'Пересобирает таблицу tb_movement_detail с историей должностей и подразделений на каждую дату движения';

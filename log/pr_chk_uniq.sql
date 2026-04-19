@@ -73,4 +73,5 @@ end;
 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_chk_uniq(text, text, text, text, boolean, integer) IS 'Проверяет уникальность ключей таблицы за диапазон дат, при нарушении бросает исключение или возвращает JSON с дублями';

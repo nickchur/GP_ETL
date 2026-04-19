@@ -34,3 +34,5 @@ as $body$
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_zip_vasm_operation_cnt() IS 'Пересчитывает счётчики операций ВАСМ по датам и обновляет таблицу vasm_operation_cnt';

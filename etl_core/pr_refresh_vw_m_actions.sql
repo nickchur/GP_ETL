@@ -15,3 +15,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_refresh_vw_m_actions() IS 'Обновляет материализованное представление vw_m_actions';

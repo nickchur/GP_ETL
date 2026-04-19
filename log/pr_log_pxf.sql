@@ -118,4 +118,5 @@ exception when OTHERS then
 end;
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_pxf() IS 'Обходит активные PXF-источники и фиксирует изменения максимального ключевого значения в tb_log_pxf';

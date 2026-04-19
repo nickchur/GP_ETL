@@ -28,4 +28,5 @@ exception when OTHERS then
 end; 
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_analyze(text, text) IS 'Выполняет ANALYZE для таблицы или указанных колонок, возвращает время выполнения';

@@ -230,3 +230,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_check_etl(text, text, text, text, text, boolean, timestamp without time zone) IS 'Проверяет актуальность данных таблицы ETL по хэшу, считает статистику и запускает ztest';
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_check_etl(text, text, json) IS 'Проверяет актуальность данных таблицы ETL по хэшу с параметрами в JSON, запускает ztest';

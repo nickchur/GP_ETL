@@ -112,3 +112,4 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_ctl(text, text, text) IS 'Парсит JSON-сообщение из CTL и вставляет новые/изменённые записи в tb_log_ctl';

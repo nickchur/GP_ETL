@@ -11,4 +11,5 @@ exception when OTHERS then
 end;
 $body$
 EXECUTE ON ANY;
-	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.try_hash(text) IS 'Вычисляет детерминированный UUID-хэш строки на основе SHA-256 с солью';

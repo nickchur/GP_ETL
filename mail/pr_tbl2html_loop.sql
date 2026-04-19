@@ -227,3 +227,5 @@ end;
 $body$
 EXECUTE ON ANY;
 	
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_tbl2html_loop(text, text, text, json) IS 'Формирует HTML-таблицу из записей в цикле, объединяя результаты нескольких запросов';
