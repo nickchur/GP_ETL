@@ -75,4 +75,4 @@
 | `tb_bd4ds.sql` | Таблица конфигурации BD4DS |
 | `tb_skew_details.sql` | Детализация информации о data skew |
 | `tmp_attr_full_description.sql` | Временная таблица атрибутов с полным описанием |
-| `tmp_tb_sberindex_df_city.sql` | Временная таблица данных Сберindex по городам |
+| `tmp_tb_sberindex_df_city.sql` | Временная таблица данных по городам |
