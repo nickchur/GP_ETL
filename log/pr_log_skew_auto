@@ -1,0 +1,111 @@
+CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_skew_auto(                                                                                      
+    p_schema   text     default 's_grnplm_vd_hr_edp_%',                                                                                          
+    p_table    text     default '%',                                                                                                             
+    p_interval interval default '7 days',                                                                                                        
+    p_limit    int      default null,                                                                                                            
+    p_timeout  interval default '4 hours'                                                                                                        
+)                                                                                                                                                
+    RETURNS text                                                                                                                                 
+    LANGUAGE plpgsql                                                                                                                             
+    SECURITY DEFINER                                                                                                                             
+    VOLATILE                                                                                                                                     
+as $body$                                                                                                                                        
+                                                                                                                                                 
+/*                                                                                                                                               
+    Находит таблицы, для которых перекос не считался дольше p_interval (или не считался вообще),                                                 
+    и вызывает pr_log_skew для каждой из них.                                                                                                    
+                                                                                                                                                 
+    Параметры:                                                                                                                                   
+        p_schema   — паттерн схемы (LIKE), по умолчанию 's_grnplm_vd_hr_edp_%'                                                                   
+        p_table    — паттерн имени таблицы (LIKE), по умолчанию '%'                                                                              
+        p_interval — порог устаревания записи в tb_log_skew, по умолчанию '7 days'                                                               
+        p_limit    — максимум таблиц за один запуск (null = без ограничений)                                                                     
+        p_timeout  — максимальное время работы функции, по умолчанию '4 hours'                                                                   
+                                                                                                                                                 
+    Возвращает: 'OK <обработано> (<пропущено busy>)/<всего>'                                                                                     
+*/                                                                                                                                               
+                                                                                                                                                 
+declare                                                                                                                                          
+    rec    record;                                                                                                                               
+    txt    text;                                                                                                                                 
+    k      int := 0;   -- всего кандидатов                                                                                                       
+    s      int := 0;   -- успешно обработано                                                                                                     
+    b      int := 0;   -- пропущено из-за блокировки         
+begin                                                                                                                                            
+    set search_path to s_grnplm_vd_hr_edp_srv_wf;                                                                                                
+                                                                                                                                                 
+    for rec in (                                                                                                                                 
+        select                                                                                                                                   
+            format('%I.%I', t.schemaname, t.relname) as tbl                                                                                      
+            , ls.last_ts            
+        from pg_stat_all_tables t                                       
+        inner join pg_tables p                                          
+            on p.schemaname = t.schemaname                              
+            and p.tablename = t.relname                                 
+            and p.tableowner = current_user                             
+        inner join pg_class c       
+            on c.oid = format('%I.%I', p.schemaname, p.tablename)::regclass::oid                                                                 
+            and c.relstorage::text <> 'x'   -- исключаем external tables                                                                         
+        left join (                 
+            select tbl, max(ts) as last_ts                              
+            from tb_log_skew        
+            group by tbl            
+        ) ls on ls.tbl = format('%I.%I', t.schemaname, t.relname)::regclass::text                                                                
+        where t.schemaname like p_schema                                
+            and t.relname   like p_table                                
+            and t.relname not like '%_1_prt_%'                  -- исключаем партиции                                                            
+            and lower(left(t.relname, 3)) not in ('pxf', 'ext') -- исключаем внешние таблицы                                                     
+            and (ls.last_ts < now() - p_interval or ls.last_ts is null)                                                                          
+        order by ls.last_ts nulls first                         -- сначала никогда не считавшиеся                                                
+        limit p_limit               
+    ) loop                          
+
+        if clock_timestamp() - now() > p_timeout then                   
+            raise info 'timeout % reached after %/% tables', p_timeout, s, k;                                                                    
+            exit;                   
+        end if;                     
+
+        k := k + 1;                 
+
+        if try_cast2regclass(rec.tbl) is not null then                  
+            begin                   
+                set lock_timeout = 1000;                                
+                txt := pr_log_skew(rec.tbl);                            
+                s   := s + 1;       
+                set lock_timeout = 0;                                   
+            exception when lock_not_available then                      
+                set lock_timeout = 0;                                   
+                b   := b + 1;       
+                txt := 'BUSY (lock)';            
+           end;
+        else
+            txt := 'skip (dropped)';
+        end if;
+
+        raise info '% (%)/% | last_ts: % | % | %', s, b, k, rec.last_ts, rec.tbl, txt;
+    end loop;
+
+    return format('OK %s (%s)/%s', s, b, k);
+
+exception when OTHERS then
+    declare
+        e_txt     text;
+        e_detail  text;
+        e_hint    text;
+        e_context text;
+    begin
+        get stacked diagnostics
+            e_txt     = MESSAGE_TEXT,
+            e_detail  = PG_EXCEPTION_DETAIL,
+            e_hint    = PG_EXCEPTION_HINT,
+            e_context = PG_EXCEPTION_CONTEXT;
+
+        perform pr_log_error(0, e_txt, e_detail, e_hint, e_context);
+        return 'Error: ' || e_txt;
+    end;
+end;
+$body$
+EXECUTE ON ANY;
+
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_log_skew_auto(text, text, interval, int, interval)
+    IS 'Находит таблицы с устаревшей записью в tb_log_skew (или без записи) и вызывает pr_log_skew. Параметры: p_schema (LIKE-паттерн схемы), p_table (LIKE-паттерн таблицы), p_interval (порог устаревания, default 7 days), p_limit (лимит таблиц за запуск), p_timeout (лимит времени, default 4h)';
