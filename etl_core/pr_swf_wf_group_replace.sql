@@ -1,4 +1,48 @@
-CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_wf_group_replace(new_wf text) 
+/*
+ pr_swf_wf_group_replace(new_wf text) -> text
+
+ Замена набора отдельных воркфлоу в конфигурации tb_swf на одну новую
+ групповую загрузку. Из тела групповой функции pr_<new_wf>() извлекается
+ список её членов (аргументы вызова pr_swf_wf_group), после чего расписание
+ членов сворачивается в одну строку tb_swf, старые члены выводятся из
+ эксплуатации, а внешние ссылки (wf_waits / wf_relations) перенаправляются
+ на новую группу. Изменения выполняются в одной транзакции.
+
+ ПАРАМЕТР
+   new_wf - имя новой групповой функции (с префиксом pr_ или без);
+            её тело должно вызывать pr_swf_wf_group('{члены}', '{связи}').
+
+ РЕЗУЛЬТАТ (text)
+   'Ok <name> <old_wf>[N] add +A Old -O rel -R'  - счётчики затронутых строк:
+        add  - вставлено строк новой группы,
+        Old  - помечено wf_end у старых членов,
+        rel  - обновлено ссылок у сторонних воркфлоу.
+   'Error: length old_wf N <> rel_wf M'          - рассинхрон длин массивов.
+   'Error: <текст>'                              - исключение (блок OTHERS).
+
+ АЛГОРИТМ
+  1. new_wf := имя без префикса pr_ (substring 'pr_(\w+)').
+  2. Из pg_get_functiondef(pr_<new_wf>()) регэкспами извлекаются два массива
+     аргументов pr_swf_wf_group: old_wf (список функций) и rel_wf (связи).
+  3. Валидация: каждый член old_wf приводится к regprocedure (проверка
+     существования); при array_length(old_wf) <> array_length(rel_wf) -> Error.
+  4. Архивация текущей конфигурации: insert into tb_swf_hist (now(), *).
+  5. Вставка новой групповой строки в tb_swf: wf_exec='pr_<new_wf>()',
+     расписание сворачивается из членов (min beg/interval/expire, max last),
+     wf_waits = внешние ожидания/связи членов (указывающие за пределы группы).
+     -> счётчик 'add'.
+  6. Вывод старых членов: update tb_swf set wf_end=now() where wf_name in old_wf.
+     -> счётчик 'Old'.
+  7. Перенаправление ссылок: у сторонних воркфлоу, которые ждали/зависели от
+     старых членов, соответствующие элементы wf_waits / wf_relations заменяются
+     на new_wf. -> счётчик 'rel'.
+  8. Возврат строки ret со счётчиками.
+  9. Исключения: OTHERS -> pr_Log_error, возврат 'Error: <текст>'.
+
+ EXECUTE ON ANY - может выполняться на любом сегменте Greenplum.
+ См. также pr_swf_wf_group (исполнение группы) и pr_swf_start (запуск WF).
+ */
+CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_wf_group_replace(new_wf text)
 	RETURNS text
 	LANGUAGE plpgsql
 	VOLATILE

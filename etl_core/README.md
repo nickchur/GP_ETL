@@ -16,7 +16,7 @@
 | `pr_swf_log_clean.sql` | Очистка устаревших записей в логах SWF |
 | `pr_swf_skew.sql` | Анализ и логирование data skew для таблиц в рамках воркфлоу |
 | `pr_swf_wf_group.sql` | Управление группами воркфлоу (создание, изменение) — [описание алгоритма](pr_swf_wf_group.md) |
-| `pr_swf_wf_group_replace.sql` | Замена/обновление группы воркфлоу |
+| `pr_swf_wf_group_replace.sql` | Замена/обновление группы воркфлоу — [описание алгоритма](pr_swf_wf_group_replace.md) |
 | `pr_super_workflow_tmt.sql` | Управление таймаутами super workflow |
 | `pr_any2stg_v1.sql` | Универсальный загрузчик данных в слой STG (версия 1) |
 | `pr_dia2stg_full.sql` | Полная перезагрузка из слоя DIA в STG |
