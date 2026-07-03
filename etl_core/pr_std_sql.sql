@@ -8,6 +8,9 @@ declare
     sql text;
 begin
     prm = lower(prm);
+    -- алиасы: '#... tbl' эквивалентно '#... tb'
+    if lower(action) = '#swf tbl'    then action = '#swf tb';    end if;
+    if lower(action) = '#status tbl' then action = '#status tb'; end if;
     
     sql = (select 
     case lower(action)
@@ -15,7 +18,7 @@ begin
         $_$
         select n.nspname ||'.'|| c.relname as name,  pg_get_userbyid(c.relowner) owner 
         from pg_class c join pg_namespace n on c.relnamespace=n.oid 
-        where c.relname like '%_hr_edp_sdf_view' 
+        where c.relname like '%%_hr_edp_sdf_view' 
         -- where pg_get_userbyid(c.relowner) ~ 'sdf'
             and c.relname ~ '%1$s' and %2$s order by 1
         $_$
@@ -23,13 +26,13 @@ begin
         $_$
         select a.*
             --, c.reloptions, c.relstorage --, to_char(c.reltuples, 'FM999,999,999,999,999,999') reltuples, c.relpages
-            --, pg_get_table_distributedby(format('%I.%I', schemaname, tablename)::regclass::oid) distributedby
-            --, pg_get_partition_def(format('%I.%I', schemaname, tablename)::regclass::oid) partition_def
+            --, pg_get_table_distributedby(format('%%I.%%I', schemaname, tablename)::regclass::oid) distributedby
+            --, pg_get_partition_def(format('%%I.%%I', schemaname, tablename)::regclass::oid) partition_def
             --, pg_size_pretty(s_grnplm_vd_hr_edp_srv_wf.pr_table_size(table_schema||'.'||table_name)) table_size
         from pg_views a
-        --join pg_class c on format('%I.%I', schemaname, tablename)::regclass::oid=c.oid
+        --join pg_class c on format('%%I.%%I', schemaname, tablename)::regclass::oid=c.oid
         where viewowner ~ 'hr_edp_sdf'
-            -- and schemaname like '%_hr_edp_%' and tablename not like '%_1_prt_%' 
+            -- and schemaname like '%%_hr_edp_%%' and tablename not like '%%_1_prt_%%' 
             -- and lower(viewname) ~ lower('%1$s') and %2$s 
         order by schemaname, viewname
         $_$
@@ -37,7 +40,7 @@ begin
         $_$
             select n.nspname ||'.'|| c.relname as name 
             from pg_class c join pg_namespace n on c.relnamespace=n.oid 
-            where c.relname like 'pg_temp%' and c.relname ~ '%1$s' and %2$s order by 1
+            where c.relname like 'pg_temp%%' and c.relname ~ '%1$s' and %2$s order by 1
         $_$
     when '#busy' then
         $_$
@@ -48,7 +51,7 @@ begin
         select left(query_start::text,16) ts, left((now()-query_start)::text,8) dif, pid, state, left(query,200) sql --, pg_cancel_backend(pid) cnl, pg_sleep(1) 
         from pg_stat_activity 
         where state <> 'idle' 
-            and query not like 'select s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(%' and xact_start < now() - '15 minutes'::interval
+            and query not like 'select s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(%%' and xact_start < now() - '15 minutes'::interval
             and %2$s 
         order by ts
         $_$
@@ -129,8 +132,8 @@ begin
         select a.rn, a.is_swf, a.ts, a.tr, a.dur, a.pid, a.state, b.next, b.ready, b.start, b.wf, b.duration
             , b.wait wait_swf, b.duration::interval - a.dur::interval wait_gp, sess_id, a.sql, b.swf_name, a.application_name
         from (
-            select row_number() over(partition by (query like 'select s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(%') order by xact_start) as rn
-                , (query like 'select s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(%') is_swf 
+            select row_number() over(partition by (query like 'select s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(%%') order by xact_start) as rn
+                , (query like 'select s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(%%') is_swf 
                 , left(query_start::text,16) ts, left(xact_start::text,16) tr, left((clock_timestamp()-query_start)::text,8) dur, pid, state, left(query,200) sql
                 , sess_id, waiting_reason, coalesce(nullif(application_name,''),'...') application_name
             from pg_stat_activity
@@ -166,8 +169,8 @@ begin
             order by rn_td
             ) b
         left join (
-            select row_number() over(partition by (query like 'select s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(%') order by xact_start) as rn
-                , (query like 'select s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(%') is_swf 
+            select row_number() over(partition by (query like 'select s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(%%') order by xact_start) as rn
+                , (query like 'select s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_all(%%') is_swf 
                 , left(query_start::text,16) ts, left(xact_start::text,16) tr, left((clock_timestamp()-query_start)::text,8) dur, pid, state, left(query,200) sql 
             from pg_stat_activity
             where state <> 'idle' 
@@ -176,7 +179,7 @@ begin
         $_$
         
     when '#vacuum' then
-        sql =$_$
+        $_$
         select row_number() over(order by coalesce(last_vacuum, '1900-01-01') ,  coalesce(last_analyze, '1900-01-01') , schemaname desc) n
 --            , round(n_dead_tup::numeric/nullif(n_live_tup,0), 2)::text dl
             , schemaname ,relname, n_dead_tup, n_live_tup
@@ -187,9 +190,9 @@ begin
             --, c.reloptions, c.relstorage
         from pg_stat_all_tables a 
         inner join tables b on a.schemaname = b.table_schema and a.relname = b.table_name -- and b.is_insertable_into::text = 'YES'
-        where a.schemaname like '%_hr_edp_%' and a.relname ~ '%1$s' and %2$s
-            -- and a.relname not like 'tb_swf_%_log'
-            and a.relname not like '%_1_prt_%'
+        where a.schemaname like '%%_hr_edp_%%' and a.relname ~ '%1$s' and %2$s
+            -- and a.relname not like 'tb_swf_%%_log'
+            and a.relname not like '%%_1_prt_%%'
             -- and n_dead_tup > 0 
             -- and lower(left(a.relname,3)) not in('pxf','ext') 
             -- and last_analyze is not null
@@ -197,7 +200,7 @@ begin
         $_$
     when '#swf chk' then
         -- if whr == 'true': whr = "7"
-        sql =$_$
+        $_$
         select a.beg_id
         , a.wf, a.swf, a.td
         , left(a.ready::text, 16) ready
@@ -254,7 +257,7 @@ begin
         left join pg_class r on r.oid = l.relation
         join pg_stat_activity a on a.pid = l.pid
         where l.database > 0 
---            and a.usename like 'u_%_hr_%'
+--            and a.usename like 'u_%%_hr_%%'
             and coalesce(r.relname,'') ~ '%1$s' and %2$s
 --            and not l.granted
             and l.relation in (select distinct relation from pg_locks where not granted)
@@ -280,8 +283,8 @@ begin
         left join pg_class r on r.oid = l.relation
         join pg_stat_activity a on a.pid = l.pid
         where l.database > 0 
---            and a.usename like 'u_%_hr_%'
-            and r.relacl::text like '%u_sklgrnplm_s_vd_hr_edp_ppl%'
+--            and a.usename like 'u_%%_hr_%%'
+            and r.relacl::text like '%%u_sklgrnplm_s_vd_hr_edp_ppl%%'
             and coalesce(r.relname,'') ~ '%1$s' and %2$s
 --            and not l.granted
 --            and l.relation in (select distinct relation from pg_locks where not granted)
@@ -325,7 +328,7 @@ begin
            left join pg_class b on b.oid = blocked_locks.relation
            -- left join pg_class c on c.oid = blocking_locks.relation
            WHERE true and NOT blocked_locks.granted
-                and (blocked_activity.usename like 'u_%_hr_%' or blocking_activity.usename like 'u_%_hr_%')
+                and (blocked_activity.usename like 'u_%%_hr_%%' or blocking_activity.usename like 'u_%%_hr_%%')
                 and coalesce(b.relname,'') ~ '%1$s' and %2$s
             group by obj, blocked_pid, blocked_locktype, blocked_start, blocked_user, blocked_query, blocked_app, blocked_state
                 --, blocking_pid
@@ -336,7 +339,7 @@ begin
     when '#swf' then
         $_$select * from vw_swf where lower(wf_name) ~ lower('%1$s') and %2$s order by 1$_$
 
-    when '#swf tb' or sql.lower() == '#swf tbl' then
+    when '#swf tb' then
         $_$
             select left(wf_beg::time::text, 8) wf_time
                 , left(s_grnplm_vd_hr_edp_srv_wf.pr_swf_get_next(a.wf_beg, a.wf_interval, a.wf_last + a.wf_duration, a.wf_end)::text, 16) wf_next
@@ -348,7 +351,7 @@ begin
     when '#status' then
         $_$select * from vw_swf_status where  swf_name ~ '%1$s' and %2$s order by 1$_$
 
-    when '#status tb' or sql.lower() == '#status tbl' then
+    when '#status tb' then
         $_$select * from tb_swf_status where  swf_name ~ '%1$s' and %2$s order by 1$_$
 
     when '#log last' then
@@ -390,7 +393,7 @@ begin
             select ts, replace(tbl, 's_grnplm_vd_hr_edp_', '') tbl, skew, segments
             , pg_size_pretty(tbl_size) size
             , 1.0 * tbl_size / nullif(data_size, 0) as ratio
-            , (100.0 * min/max)::int::text || ' %' min_max
+            , (100.0 * min/max)::int::text || ' %%' min_max
             , sum
             , min
             , max
@@ -402,7 +405,7 @@ begin
             , replace(distributedby, 'DISTRIBUTED ', '') distributedby
             --, tbl_size
             , options
-            from (select distinct on (tbl) * from tb_log_skew where tbl not like '%_1_prt_%' and tbl ~ '%1$s' and %2$s order by tbl, 1 desc) a
+            from (select distinct on (tbl) * from tb_log_skew where tbl not like '%%_1_prt_%%' and tbl ~ '%1$s' and %2$s order by tbl, 1 desc) a
             order by 1 desc
         $_$
     when '#skew hist' then
@@ -417,7 +420,7 @@ begin
             --, tbl_size
             , options
             from tb_log_skew 
-            where tbl not like '%_1_prt_%' 
+            where tbl not like '%%_1_prt_%%' 
                 and tbl ~ '%1$s' and %2$s 
             order by 1 desc
         $_$
@@ -528,12 +531,12 @@ begin
         $_$
         select a.*
             , c.reloptions, c.relstorage --, to_char(c.reltuples, 'FM999,999,999,999,999,999') reltuples, c.relpages
-            , pg_get_table_distributedby(format('%I.%I', schemaname, tablename)::regclass::oid) distributedby
-            -- , pg_get_partition_def(format('%I.%I', schemaname, tablename)::regclass::oid) partition_def
+            , pg_get_table_distributedby(format('%%I.%%I', schemaname, tablename)::regclass::oid) distributedby
+            -- , pg_get_partition_def(format('%%I.%%I', schemaname, tablename)::regclass::oid) partition_def
             -- , pg_size_pretty(s_grnplm_vd_hr_edp_srv_wf.pr_table_size(table_schema||'.'||table_name)) table_size
         from pg_tables a
-        left join pg_class c on format('%I.%I', schemaname, tablename)::regclass::oid=c.oid
-        where schemaname like '%_hr_edp_%' and tablename not like '%_1_prt_%' 
+        left join pg_class c on format('%%I.%%I', schemaname, tablename)::regclass::oid=c.oid
+        where schemaname like '%%_hr_edp_%%' and tablename not like '%%_1_prt_%%' 
             and lower(tablename) ~ lower('%1$s') and %2$s 
             and not tablename ~ 'ext_gpload'
         order by schemaname, tablename
@@ -556,10 +559,10 @@ begin
                 , c.reloptions
     --            , c.reltuples, c.relpages
                 , case when table_type = 'BASE TABLE' and is_insertable_into = 'YES' 
-                    then pg_get_table_distributedby(format('%I.%I', table_schema, table_name)::regclass::oid) 
+                    then pg_get_table_distributedby(format('%%I.%%I', table_schema, table_name)::regclass::oid) 
                     else null end distributedby 
                 , case when table_type = 'BASE TABLE' and is_insertable_into = 'YES' 
-                    then substring(pg_get_partition_def(format('%I.%I', table_schema, table_name)::regclass::oid) from '(PARTITION BY \w+\([\w""]+\))')
+                    then substring(pg_get_partition_def(format('%%I.%%I', table_schema, table_name)::regclass::oid) from '(PARTITION BY \w+\([\w""]+\))')
                     else null end partition_def
                 , prt_end
                 , coalesce(b.n_live_tup, '') n_live_tup
@@ -572,7 +575,7 @@ begin
                 , b.last_analyze, b.last_vacuum
                 , e.tableowner, e.hasindexes, e.hasrules, e.hastriggers
             from tables a
-            left join pg_class c on format('%I.%I', table_schema, table_name)::regclass::oid=c.oid
+            left join pg_class c on format('%%I.%%I', table_schema, table_name)::regclass::oid=c.oid
             left join (
                 select a.schemaname,  coalesce(b.tablename, a.relname) tablename
                     , to_char(sum(n_live_tup), 'FM999,999,999,999,999,999') n_live_tup
@@ -590,14 +593,14 @@ begin
                     , max(partitionrangeend) prt_end
                 from pg_stat_user_tables a
                 left join pg_partitions b on a.schemaname = b.partitionschemaname and a.relname = b.partitiontablename
-                where a.schemaname like 's_grnplm_vd_hr_edp_%'
+                where a.schemaname like 's_grnplm_vd_hr_edp_%%'
                     and a.relname ~ lower('%1$s')
-                    and not a.relname like 'ext_gpload%'
+                    and not a.relname like 'ext_gpload%%'
                 group by 1,2
             )  b on a.table_schema = b.schemaname and a.table_name = tablename
             left join pg_partitions d on a.table_schema = d.partitionschemaname and a.table_name = d.partitiontablename
             left join pg_tables e on a.table_schema = e.schemaname and a.table_name = e.tablename
-            where table_schema like '%_hr_edp_%' and partitionlevel is null
+            where table_schema like '%%_hr_edp_%%' and partitionlevel is null
         ) a
         where lower(table_name) ~ lower('%1$s') and %2$s 
         order by 1,2
@@ -608,8 +611,8 @@ begin
             , case when table_type = 'BASE TABLE' and is_insertable_into = 'YES' then pg_get_table_distributedby((table_schema||'.'||table_name)::regclass::oid) else null end distributedby 
             , case when table_type = 'BASE TABLE' and is_insertable_into = 'YES' then pg_get_partition_def((table_schema||'.'||table_name)::regclass::oid) else null end partition_def 
         from tables where true
-            and (table_schema like 'pg_%' or table_schema in ('public', 'information_schema','diskquota'))
-            and table_name not like '%_1_prt_%' and table_name ~ '%1$s' and %2$s 
+            and (table_schema like 'pg_%%' or table_schema in ('public', 'information_schema','diskquota'))
+            and table_name not like '%%_1_prt_%%' and table_name ~ '%1$s' and %2$s 
             and not table_name ~ 'ext_gpload'
         order by 1,2
         $_$
@@ -619,8 +622,8 @@ begin
 --            , case when table_type = 'BASE TABLE' and is_insertable_into = 'YES' then pg_get_table_distributedby((table_schema||'.'||table_name)::regclass::oid) else null end distributedby 
 --            , case when table_type = 'BASE TABLE' and is_insertable_into = 'YES' then pg_get_partition_def((table_schema||'.'||table_name)::regclass::oid) else null end partition_def 
         from tables where true
---            and (table_schema like 'pg_%' or table_schema in ('public', 'information_schema','diskquota'))
-            and table_name not like '%_1_prt_%' and table_name ~ '%1$s' and %2$s 
+--            and (table_schema like 'pg_%%' or table_schema in ('public', 'information_schema','diskquota'))
+            and table_name not like '%%_1_prt_%%' and table_name ~ '%1$s' and %2$s 
             and not table_name ~ 'ext_gpload'
         order by 1,2
         $_$
@@ -633,7 +636,7 @@ begin
             , pg_size_pretty(b.size) as table_size
             , case when table_type = 'BASE TABLE' and is_insertable_into = 'YES' then pg_get_table_distributedby((table_schema||'.'||table_name)::regclass::oid) else null end distributedby 
             , case when table_type = 'BASE TABLE' and is_insertable_into = 'YES' 
-                then substring(pg_get_partition_def(format('%I.%I', table_schema, table_name)::regclass::oid) from '(PARTITION BY \w+\([\w""]+\))')
+                then substring(pg_get_partition_def(format('%%I.%%I', table_schema, table_name)::regclass::oid) from '(PARTITION BY \w+\([\w""]+\))')
                 else null end partition_def 
             , b.n_live_tup, b.n_dead_tup, b.prt_cnt, b.use_cnt --, b.use_prc
             , b.prt_analyze --, b.prt_prc
@@ -655,12 +658,12 @@ begin
                 , sum(pg_table_size(a.relid)) as size
             from pg_stat_user_tables a
             left join pg_partitions b on a.schemaname = b.partitionschemaname and a.relname = b.partitiontablename
-            where a.schemaname like 's_grnplm_vd_hr_edp_%'
+            where a.schemaname like 's_grnplm_vd_hr_edp_%%'
                 and a.relname ~ lower('%1$s')
-                and not a.relname like 'ext_gpload%'
+                and not a.relname like 'ext_gpload%%'
             group by 1,2
         )  b on t.table_schema = b.schemaname and t.table_name = b.tablename
-        where table_schema like '%_hr_edp_%' and table_name ~ '%1$s' and %2$s order by 1,2
+        where table_schema like '%%_hr_edp_%%' and table_name ~ '%1$s' and %2$s order by 1,2
         $_$
     
     when '#table size' then
@@ -680,9 +683,9 @@ begin
                 , sum(pg_table_size(a.relid)) as size
             from pg_stat_user_tables a
             left join pg_partitions b on a.schemaname = b.partitionschemaname and a.relname = b.partitiontablename
-            where a.schemaname like 's_grnplm_vd_hr_edp_%'
+            where a.schemaname like 's_grnplm_vd_hr_edp_%%'
                 and a.relname ~ lower('%1$s')
-                and not a.relname like 'ext_gpload%'
+                and not a.relname like 'ext_gpload%%'
             group by 1,2
         )
         select *
@@ -693,14 +696,14 @@ begin
                 , pg_size_pretty(b.size) as table_size
                 , case when table_type = 'BASE TABLE' and is_insertable_into = 'YES' then pg_get_table_distributedby(try_cast2regclass(table_schema||'.'||table_name)::oid) else null end distributedby 
                 , case when table_type = 'BASE TABLE' and is_insertable_into = 'YES' 
-                    then substring(pg_get_partition_def(format('%I.%I', table_schema, table_name)::regclass::oid) from '(PARTITION BY \w+\([\w""]+\))')
+                    then substring(pg_get_partition_def(format('%%I.%%I', table_schema, table_name)::regclass::oid) from '(PARTITION BY \w+\([\w""]+\))')
                     else null end partition_def 
                 , b.size
             from tables t
             join pg_class c on try_cast2regclass(table_schema||'.'||table_name)::oid=c.oid
             join tb_size  b on t.table_schema = b.schemaname and t.table_name = b.tablename
         ) a
-        where table_type = 'BASE TABLE' and table_schema like '%_hr_edp_%' and table_name not like '%_1_prt_%' and table_name ~ '%1$s' and %2$s 
+        where table_type = 'BASE TABLE' and table_schema like '%%_hr_edp_%%' and table_name not like '%%_1_prt_%%' and table_name ~ '%1$s' and %2$s 
         order by size desc
         $_$
     when '#table sum_old' then
@@ -708,13 +711,13 @@ begin
         with tbl as (
             select table_schema, table_name, table_type, is_insertable_into 
                 , c.reloptions, c.relstorage
-                , pg_table_size(format('%I.%I',table_schema, table_name)) table_size
-                , (pg_get_table_distributedby(format('%I.%I',table_schema, table_name)::regclass::oid) = 'DISTRIBUTED REPLICATED') is_repl 
-                , (table_name like '%_1_prt_%') is_prt
-                , (pg_get_partition_def(format('%I.%I',table_schema, table_name)::regclass::oid) is not null) is_prt_def
+                , pg_table_size(format('%%I.%%I',table_schema, table_name)) table_size
+                , (pg_get_table_distributedby(format('%%I.%%I',table_schema, table_name)::regclass::oid) = 'DISTRIBUTED REPLICATED') is_repl 
+                , (table_name like '%%_1_prt_%%') is_prt
+                , (pg_get_partition_def(format('%%I.%%I',table_schema, table_name)::regclass::oid) is not null) is_prt_def
             from tables t
-            left join pg_class c on format('%I.%I',table_schema, table_name)::regclass::oid=c.oid
-            where table_schema like '%_hr_edp_%' 
+            left join pg_class c on format('%%I.%%I',table_schema, table_name)::regclass::oid=c.oid
+            where table_schema like '%%_hr_edp_%%' 
                 and table_name ~ '%1$s' and %2$s 
         )
         select table_schema, table_type, relstorage, is_insertable_into
@@ -735,18 +738,18 @@ begin
         order by 1,2,3,4,5,6,7
         $_$
     when '#table sum' then
-        sql=$_$
+        $_$
         with size as (
             select a.schemaname, c.relstorage   
                 , a.relname
                 , c.reloptions
-                , (pg_get_table_distributedby(format('%I.%I',a.schemaname, a.relname)::regclass::oid) = 'DISTRIBUTED REPLICATED') is_repl 
-                , (a.relname like '%_1_prt_%') is_prt
-                , (pg_get_partition_def(format('%I.%I',a.schemaname, a.relname)::regclass::oid) is not null) is_prt_def
-                , pg_table_size(format('%I.%I',a.schemaname, a.relname)) table_size
+                , (pg_get_table_distributedby(format('%%I.%%I',a.schemaname, a.relname)::regclass::oid) = 'DISTRIBUTED REPLICATED') is_repl 
+                , (a.relname like '%%_1_prt_%%') is_prt
+                , (pg_get_partition_def(format('%%I.%%I',a.schemaname, a.relname)::regclass::oid) is not null) is_prt_def
+                , pg_table_size(format('%%I.%%I',a.schemaname, a.relname)) table_size
             from pg_stat_user_tables a
-            join pg_class c on format('%I.%I',a.schemaname, a.relname)::regclass::oid=c.oid
-            where a.schemaname like 's_grnplm_vd_hr_edp_d%' 
+            join pg_class c on format('%%I.%%I',a.schemaname, a.relname)::regclass::oid=c.oid
+            where a.schemaname like 's_grnplm_vd_hr_edp_d%%' 
                 and a.relname ~ '%1$s' and %2$s 
         )
             select schemaname, relstorage, is_repl
@@ -769,20 +772,20 @@ begin
     when '#part' then
         $_$
             select * from pg_partitions 
-            where schemaname like '%_hr_edp_%'and tablename ~ '%1$s' and %2$s 
+            where schemaname like '%%_hr_edp_%%'and tablename ~ '%1$s' and %2$s 
             order by schemaname, tablename, partitionlevel, partitionrank nulls first
         $_$
     when '#part det' then
         $_$
             select pg_size_pretty(pg_total_relation_size((partitionschemaname||'.'||partitiontablename)::regclass::oid)) size, *
-            from pg_partitions where schemaname like '%_hr_edp_%' and tablename ~ '%1$s' and %2$s 
+            from pg_partitions where schemaname like '%%_hr_edp_%%' and tablename ~ '%1$s' and %2$s 
             order by schemaname, tablename, partitionlevel, partitionrank nulls first
         $_$
     when '#part cnt' then
         $_$
         select schemaname, tablename, count(1) cnt, count(distinct partitionlevel) partitionlevels
         from pg_partitions 
-        where schemaname like '%_hr_edp_%' and tablename ~ '%1$s' and %2$s 
+        where schemaname like '%%_hr_edp_%%' and tablename ~ '%1$s' and %2$s 
         group by schemaname, tablename
         order by schemaname, tablename
         $_$
@@ -792,37 +795,37 @@ begin
             --, format_type(pa.atttypid, pa.atttypmod) ftype
             , tp.typname, pa.atttypmod
             , pa.attstorage, pa.attalign, pa.attbyval, table_type
-            , col_description(format('%I.%I', t.table_schema, t.table_name)::regclass::oid, pa.attnum)
+            , col_description(format('%%I.%%I', t.table_schema, t.table_name)::regclass::oid, pa.attnum)
         from pg_attribute pa 
         join tables t on (t.table_schema||'.'||t.table_name)::regclass::oid = pa.attrelid
         left join (select typname::regtype::oid typid, typname from pg_type where typrelid=0 and typnamespace=11 and typarray>0) tp on pa.atttypid = tp.typid
-        where table_schema like '%_hr_edp_%' and table_name not like '%_1_prt_%' and table_name ~ '%1$s' and %2$s and pa.attnum > 0 
+        where table_schema like '%%_hr_edp_%%' and table_name not like '%%_1_prt_%%' and table_name ~ '%1$s' and %2$s and pa.attnum > 0 
         order by 1, 2, pa.attnum
         $_$
     when '#col sht' then
         $_$
         select ordinal_position, table_schema, table_name, column_name, udt_name
-            , col_description(format('%I.%I', table_schema, table_name)::regclass::oid, ordinal_position)
+            , col_description(format('%%I.%%I', table_schema, table_name)::regclass::oid, ordinal_position)
         from columns 
-        where table_schema like '%_hr_edp_%' and table_name ~ '%1$s' and table_name not like '%_1_prt_%' and %2$s order by table_schema,table_name,ordinal_position
+        where table_schema like '%%_hr_edp_%%' and table_name ~ '%1$s' and table_name not like '%%_1_prt_%%' and %2$s order by table_schema,table_name,ordinal_position
         $_$
     when '#col det' then
         $_$
         select * 
-            , col_description(format('%I.%I', table_schema, table_name)::regclass::oid, ordinal_position)
+            , col_description(format('%%I.%%I', table_schema, table_name)::regclass::oid, ordinal_position)
         from columns 
-        where table_schema like '%_hr_edp_%' and table_name ~ '%1$s' and table_name not like '%_1_prt_%' and %2$s order by table_schema,table_name,ordinal_position
+        where table_schema like '%%_hr_edp_%%' and table_name ~ '%1$s' and table_name not like '%%_1_prt_%%' and %2$s order by table_schema,table_name,ordinal_position
         $_$
     when '#col list' then
         $_$
-            select format('%I.%I',table_schema, table_name) tbl
+            select format('%%I.%%I',table_schema, table_name) tbl
                 , string_agg(column_name, ', ' order by ordinal_position) fld
-                , string_agg(format('%s::%s', column_name, udt_name), ', ' order by ordinal_position) ftp
+                , string_agg(format('%%s::%%s', column_name, udt_name), ', ' order by ordinal_position) ftp
                 , string_agg(udt_name, ', ' order by ordinal_position) tps
             from (
                 select table_catalog, table_schema, table_name, column_name, udt_name, ordinal_position 
                 from columns 
-                where table_schema like '%_hr_edp_%' and table_name not like '%_1_prt_%' and table_name ~ '%1$s' and %2$s order by table_schema,table_name,ordinal_position
+                where table_schema like '%%_hr_edp_%%' and table_name not like '%%_1_prt_%%' and table_name ~ '%1$s' and %2$s order by table_schema,table_name,ordinal_position
             ) a
             group by 1
             order by 1
@@ -832,8 +835,8 @@ begin
         $_$
         select string_agg(
             case 
-            when part.part like '%COLUMN % ENCODING %' then ','
-            when part.part like $$%START % END % orientation='column'%$$ then part.part||','
+            when part.part like '%%COLUMN %% ENCODING %%' then ','
+            when part.part like $$%%START %% END %% orientation='column'%%$$ then part.part||','
             else part end
             , '\n' order by tbl_def, n) tbl_def 
         from (
@@ -846,13 +849,13 @@ begin
                 as tbl_def
                 , tbl_name
                 , c.reloptions
-                $_$+$_$
+                $_$||$_$
                 from (
                     select '    '||case when fld_num=1 then '' else ', 'end||fld_name||' '||fld_type 
                         ||case when is_nullable='NO' then ' not NULL' else '' end 
                         ||coalesce(' default '||column_default, '') as fld_def, *
                     from (
-                        select format('%I.%I',table_schema, table_name) tbl_name
+                        select format('%%I.%%I',table_schema, table_name) tbl_name
                             , row_number() over(partition by table_schema, table_name order by ordinal_position) fld_num
                             --, ordinal_position fld_num
                             , column_name fld_name
@@ -861,8 +864,8 @@ begin
                             , is_nullable
                             , column_default
                         from columns 
-                        where table_schema like '%_hr_edp_%' and table_name ~ '%1$s' and %2$s
-                             and table_name not like '%_1_prt_%'
+                        where table_schema like '%%_hr_edp_%%' and table_name ~ '%1$s' and %2$s
+                             and table_name not like '%%_1_prt_%%'
                         ) a
                     order by  tbl_name, fld_num
                 ) b
@@ -872,17 +875,17 @@ begin
             , pg_get_partition_def(tbl_name::regclass, true) part
             order by tbl_name
       ) a, regexp_split_to_table(tbl_def, '\n') with ordinality part(part,n)
-        where part.part not like '%COLUMN % ENCODING %' 
+        where part.part not like '%%COLUMN %% ENCODING %%' 
             -- or right(trim(part.part), 1) = ','
         $_$
     when '#view' then
-        $_$select * from pg_views where schemaname like 's_grnplm_vd_hr_edp_%' and viewname ~ '%1$s' and %2$s$_$
+        $_$select * from pg_views where schemaname like 's_grnplm_vd_hr_edp_%%' and viewname ~ '%1$s' and %2$s$_$
     when '#view all' then
         $_$select * from pg_views where viewname ~ '%1$s' and %2$s$_$
     when '#view std' then
-        $_$select * from pg_views where (schemaname like 'pg_%' or schemaname in ('public', 'information_schema','diskquota')) and viewname ~ '%1$s' and %2$s$_$
+        $_$select * from pg_views where (schemaname like 'pg_%%' or schemaname in ('public', 'information_schema','diskquota')) and viewname ~ '%1$s' and %2$s$_$
     when '#view def' then
-        $_$select format('\ncreate or replace view %I.%I as\n%s', schemaname, viewname, trim(definition)) from pg_views where schemaname ~ 's_grnplm_vd_hr_edp_' and viewname ~ '%1$s' and %2$s$_$
+        $_$select format('\ncreate or replace view %%I.%%I as\n%%s', schemaname, viewname, trim(definition)) from pg_views where schemaname ~ 's_grnplm_vd_hr_edp_' and viewname ~ '%1$s' and %2$s$_$
         
     when '#func' then
         $_$
@@ -894,13 +897,13 @@ begin
         from (
             select *, pg_get_functiondef(func::regprocedure) txt
             from (
-                SELECT format('%I.%I(%s)', ns.nspname, p.proname, oidvectortypes(p.proargtypes)) func, proowner::regclass own
+                SELECT format('%%I.%%I(%%s)', ns.nspname, p.proname, oidvectortypes(p.proargtypes)) func, proowner::regclass own
                 FROM pg_proc p 
                 INNER JOIN pg_namespace ns ON (p.pronamespace = ns.oid)
-                WHERE ns.nspname like '%_hr_edp_%' 
+                WHERE ns.nspname like '%%_hr_edp_%%' 
                 --  and lower(p.proname) ~ lower('%1$s') 
             ) a
-            where lower(func) like lower('%%1$s%')
+            where lower(func) like lower('%%%1$s%%')
         ) a
         left join pg_roles rol on a.own = rol.oid
         left join pg_resgroup rsg on rol.rolresgroup = rsg.oid
@@ -913,28 +916,28 @@ begin
         from (
             select func, pg_get_functiondef(func::regprocedure)||';' txt 
             from (
-                SELECT format('%I.%I(%s)', ns.nspname, p.proname, oidvectortypes(p.proargtypes)) func
+                SELECT format('%%I.%%I(%%s)', ns.nspname, p.proname, oidvectortypes(p.proargtypes)) func
                 FROM pg_proc p INNER JOIN pg_namespace ns ON (p.pronamespace = ns.oid)
-                WHERE ns.nspname like 's_grnplm_vd_hr_edp_%' 
+                WHERE ns.nspname like 's_grnplm_vd_hr_edp_%%' 
             ) a
-            where lower(func) like lower('%%1$s%')
+            where lower(func) like lower('%%%1$s%%')
         ) a
         where %2$s
         order by 1
         $_$
     when '#func std' then
         $_$
-            SELECT format('%I.%I(%s)', ns.nspname, p.proname, oidvectortypes(p.proargtypes)) func
+            SELECT format('%%I.%%I(%%s)', ns.nspname, p.proname, oidvectortypes(p.proargtypes)) func
             FROM pg_proc p INNER JOIN pg_namespace ns ON (p.pronamespace = ns.oid)
-            WHERE (ns.nspname like 'pg_%' or ns.nspname in ('public', 'information_schema','diskquota'))
+            WHERE (ns.nspname like 'pg_%%' or ns.nspname in ('public', 'information_schema','diskquota'))
                 and lower(p.proname) ~ lower('%1$s') and  %2$s order by 1
         $_$
     when '#func std_def' then
         $_$
         select pg_get_functiondef(f::regprocedure)||';' f from (
-            SELECT format('%I.%I(%s)', ns.nspname, p.proname, oidvectortypes(p.proargtypes)) f
+            SELECT format('%%I.%%I(%%s)', ns.nspname, p.proname, oidvectortypes(p.proargtypes)) f
             FROM pg_proc p INNER JOIN pg_namespace ns ON (p.pronamespace = ns.oid)
-            WHERE (ns.nspname like 'pg_%' or ns.nspname in ('public', 'information_schema','diskquota'))
+            WHERE (ns.nspname like 'pg_%%' or ns.nspname in ('public', 'information_schema','diskquota'))
                 and lower(p.proname) ~ lower('%1$s') and %2$s order by 1
         ) a
         order by 1
@@ -1004,7 +1007,7 @@ begin
             || coalesce(pg_catalog.pg_get_table_distributedby(tbl_name::regclass::oid) ||'\n', '')
             as tbl_def
             , ts, tbl_name
-            $_$+$_$
+            $_$||$_$
             from (
                 select '    '||case when fld_num=1 then '' else ', 'end||fld_name||' '||fld_type as fld_def, *
                 from (select distinct on (tbl_name, fld_num) * from  tb_log_fld_stat where lower(tbl_name) ~ lower('%1$s') and %2$s order by tbl_name, fld_num, ts desc ) a
@@ -1035,7 +1038,7 @@ begin
             order by end_ts desc
         $_$
     when '#ztest' then
-        sql=$_$
+        $_$
         --select distinct on (n, key_date) *
         select *
         --    n, nn, ts, object, ztest_ok, msg, is_except, is_error, confidence, zscore, key_date, key_diff, stable, rows_count, value, avg, std, cnt, min, max, log_id, notes
