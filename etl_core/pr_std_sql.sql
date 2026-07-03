@@ -1,3 +1,48 @@
+/*
+ pr_std_sql(action text, prm text DEFAULT '', whr text DEFAULT 'true') -> text
+
+ Генератор стандартных сервисных/диагностических SQL-запросов. По короткому
+ коду action (напр. #table, #lock, #swf, #log) возвращает ГОТОВЫЙ текст SELECT
+ для мониторинга и аудита объектов и процессов ETL. Сам запрос НЕ выполняется -
+ функция только формирует и возвращает его текст (обычно для последующего
+ ручного/программного запуска). Неизвестный код -> NULL.
+
+ ПАРАМЕТРЫ
+   action - код запроса (регистронезависим), см. категории ниже.
+   prm    - значение подстановки %1$s: как правило фильтр по имени объекта
+            (regex ~), приводится к нижнему регистру. По умолчанию '' (всё).
+   whr    - значение подстановки %2$s: дополнительное условие WHERE.
+            По умолчанию 'true' (без доп. фильтра).
+
+ АЛГОРИТМ
+  1. prm = lower(prm).
+  2. Нормализация алиасов действия: '#swf tbl'->'#swf tb', '#status tbl'->'#status tb'.
+  3. Большой CASE lower(action) выбирает шаблон запроса (dollar-quoted $_$...$_$)
+     по коду; при отсутствии совпадения -> NULL.
+  4. sql = format(sql, prm, whr): подстановка двух позиционных параметров
+     %1$s <- prm (фильтр имени), %2$s <- whr (доп. WHERE). Все прочие '%'
+     в шаблонах экранированы как '%%'.
+  5. return sql.
+
+ КАТЕГОРИИ ДЕЙСТВИЙ (action)
+   Сессии/блокировки : #busy #cancel #activity[ all] #work #todo
+                       #lock[ tbl| det]
+   Super Workflow    : #swf[ tb] #status[ tb] #swf chk #rel chk
+                       #wf[ all| cancel| last| swf] #cwf[ tb| err]
+   Логи/ошибки       : #log[ last| tb| stat| swf] #ctl #rep #err[ all| tb]
+   Таблицы/партиции/ : #table[ det| std| all| size| sum| det_old| sum_old]
+   колонки/объекты     #part[ det| cnt] #col[ sht| det| list| def] #obj #temp
+   Вьюхи/функции     : #view[ all| std| def] #func[ def| std| std_def] #sdf[2]
+   Качество/статистика: #skew[ last| hist] #ztest #fld_stat[ last| fld| def]
+                        #vacuum #vda[ tb]
+
+ СОГЛАШЕНИЯ ПО СУФФИКСАМ КОДОВ
+   tb/tbl - «сырая» таблица вместо вью; det - детально; std - системные объекты
+   (pg_*, public, information_schema); all - без фильтра схемы; last/hist -
+   последний срез/история; def - DDL-определение объекта.
+
+ EXECUTE ON ANY - может выполняться на любом сегменте Greenplum.
+ */
 CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_std_sql(action text, prm text DEFAULT ''::text, whr text DEFAULT 'true'::text) 
 	RETURNS text
 	LANGUAGE plpgsql
