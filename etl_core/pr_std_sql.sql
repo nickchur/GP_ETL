@@ -517,8 +517,6 @@ begin
         $_$
     when '#cwf tb' then
         $_$select * from tb_swf_ctl_log  where wf_message->>'wf'~ '%1$s' and %2$s order by ts desc$_$
-    when '#cwf tb' then
-        $_$select * from (select distinct on (wf) * from vw_swf_ctl_log where end_action='do' and wf ~ '%1$s' and %2$s order by wf, 1 desc) a order by 1 desc$_$
     when '#cwf err' then
         $_$
         select  * from tb_swf_ctl_log where lower(wf_action) = 'error' and %2$s order by ts desc
