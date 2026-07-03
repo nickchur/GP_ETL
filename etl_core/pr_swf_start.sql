@@ -1,4 +1,55 @@
-CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_start(swf text, wf text) 
+/*
+ pr_swf_start(swf text, wf text) -> text (json)
+
+ Запуск одного sub-workflow wf в рамках super-workflow swf. Выполняет
+ проверки предусловий, вызывает функцию-исполнитель воркфлоу (wf_exec),
+ нормализует результат в JSON и фиксирует его в tb_swf и логе действий.
+ Всегда возвращает JSON-строку с полем reselt (код результата).
+
+ ПАРАМЕТРЫ
+   swf - имя super-workflow (группы), в контексте которого идёт запуск.
+   wf  - имя запускаемого sub-workflow (строка vw_swf.wf_name).
+
+ КОДЫ РЕЗУЛЬТАТА (поле reselt в JSON)
+    >0 / 1  - успех (Ok или reselt из JSON, вернувшегося из wf_exec)
+    -1      - нет данных (ответ wf_exec начинается с 'no')
+    -2      - query_canceled / statement_timeout
+    -3      - непойманная ошибка (блок OTHERS)
+    -4      - прочий/ошибочный ответ wf_exec (не Ok/No/deadlock)
+    -5      - deadlock detected
+    -8      - просрочено: с wf_next прошло больше wf_expire
+    -9      - пропуск: зависимости не в статусе OK (rel_ok != true)
+   -10      - TODO-статус воркфлоу не true
+   -11      - воркфлоу не найден в vw_swf (wf_id is null)
+   -12      - воркфлоу уже запущен (активная сессия по application_name)
+
+ АЛГОРИТМ
+  1. application_name = wf; search_path на схему SWF; лог действия 'start'.
+  2. Пауза pg_sleep(10), затем защита от повторного запуска: поиск активных
+     сессий в pg_stat_activity по application_name = wf (или wf/%). При
+     срабатывании - reselt=-12, лог 'error', возврат.
+  3. Чтение метаданных воркфлоу: select * from vw_swf where wf_name = wf.
+     Предусловия (при нарушении - лог и ранний возврат/пропуск):
+       - wf_id is null            -> -11 'error';
+       - todo is not true         -> -10 'todo';
+       - rel_ok is not true       ->  -9 'skip'  (без раннего возврата);
+       - now()-wf_next > wf_expire ->  -8 'late'  (без раннего возврата).
+  4. Иначе - вызов исполнителя: execute 'select <wf_exec>' into ret.
+     Разбор ответа:
+       - если ret это JSON с полем reselt -> берём это значение;
+       - иначе по префиксу текста: 'ok ' -> 1; 'no ' -> -1;
+         'dedlock detected' -> -5; прочее -> -4.
+     Лог действия 'end'.
+  5. Фиксация: update tb_swf (wf_last, wf_duration, wf_reselt, wf_swf),
+     возврат JSON-строки m_txt.
+  6. Исключения:
+       - query_canceled -> reselt=-2, лог 'cancel', update tb_swf, возврат;
+       - OTHERS -> pr_Log_error, reselt=-3, лог 'error', update tb_swf, возврат.
+
+ EXECUTE ON ANY - может выполняться на любом сегменте Greenplum.
+ См. также pr_swf_wf_group (оркестрация группы workflow).
+ */
+CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_start(swf text, wf text)
 	RETURNS text
 	LANGUAGE plpgsql
 	VOLATILE
