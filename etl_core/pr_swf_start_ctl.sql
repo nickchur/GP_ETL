@@ -1,4 +1,60 @@
-CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_ctl(wf_jsn json) 
+/*
+ pr_swf_start_ctl(wf_jsn json) -> json
+
+ Обработка одной итерации CTL-workflow по JSON-конфигурации. Формирует и
+ выполняет функцию-исполнитель воркфлоу, опционально прогоняет контроль
+ качества данных (ККД / Z-тест), собирает метрики для DataHub и возвращает
+ нормализованный JSON-ответ с полем res (код результата). Тип SWF - 'ctl'.
+
+ ВХОДНОЙ JSON (wf_jsn)
+   wf        - имя воркфлоу (напр. 'pr_load_employee');
+   sch       - краткое имя схемы (stg, vd, ...);
+   exe       - исполняемый код (по умолчанию pr_<wf>());
+   lid       - id из tb_ctl_loading;
+   rtr.try   - номер попытки; rtr.left - осталось попыток;
+   sdt       - дата запуска (по умолчанию now());
+   wfp       - доп. параметры (json), подставляются как $key$;
+   swf       - id воркфлоу;
+   ККД:  zts (схема Z-теста), ztt (таблица), zta (активность),
+         ztb (откат при ошибке), zte (требовать успех), ztp (доп. параметры).
+
+ КОДЫ РЕЗУЛЬТАТА (поле res в JSON; JSON-ответ wf_exec может переопределить
+ через поле result/res)
+    1  - успех (Ok или пустой ответ)
+    0  - нет данных (No)
+   -1  - empty
+   -2  - query_canceled / statement_timeout
+   -3  - expire
+   -4  - uniq check error
+   -5  - ошибка ККД / Z-теста (ztest error либо zte и notes.ztest=false)
+   -7  - непойманная ошибка (блок OTHERS)
+   -8  - PXF server error
+   -9  - прочая ошибка
+
+ АЛГОРИТМ
+  1. search_path на схему SWF; лог действия 'start'; application_name='ctl.'||wf.
+  2. Инициализация ККД: wf_zt = true, если задан хотя бы один zt*-параметр;
+     zts по умолчанию 'stg', ztt - автоимя от wf. При wf_zt -> pr_ztest_set(...).
+  3. Формирование исполняемого кода:
+     wf_exe = 's_grnplm_vd_hr_edp_'||sch||'.'||(exe | pr_<wf>()), затем
+     подстановка плейсхолдеров $wf$/$sdt$/$lid$/$try$/$left$/$wfp$ и всех
+     ключей wfp как $key$.
+  4. Выполнение: execute 'select '||wf_exe into wf_ret.
+  5. Разбор res по префиксу/подстроке ответа (см. коды выше); если wf_ret -
+     это JSON, res переопределяется полем result/res.
+  6. При res=1 - контроль качества: чтение последнего результата из
+     tb_ztest_data; при zte и notes.ztest=false -> res=-5; сбор метрики hub
+     для DataHub (Z_TEST = 100-|zscore|, либо fallback S_TEST=99).
+  7. Сбор hub/stat/ztest/cdc/html из ответа, очистка m_jsn от служебных полей,
+     формирование итогового JSON (tag='msg' или 'html'); лог 'end'; возврат.
+  8. Исключения:
+       - query_canceled -> res=-2, лог 'cancel', возврат;
+       - OTHERS -> pr_Log_error, res=-7, лог 'error', возврат.
+
+ EXECUTE ON ANY - может выполняться на любом сегменте Greenplum.
+ См. также pr_swf_start (запуск sub-workflow) и pr_swf_wf_group (группа WF).
+ */
+CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_swf_start_ctl(wf_jsn json)
 	RETURNS json
 	LANGUAGE plpgsql
 	VOLATILE
