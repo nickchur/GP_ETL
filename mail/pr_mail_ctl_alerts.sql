@@ -40,8 +40,15 @@ as $body$
 -- окно не заводим вовсе. Границу правят в параметре потока wf_exe, без выкладки функции:
 --   pr_mail_ctl_alerts(null, '18:00')
 --
--- obj и expr подставляются в SQL как есть - как tbl/bdate в pr_check_bd4ds. Источник тот
--- же по доверию (настройки CTL), но писать туда произвольный SQL нельзя.
+-- obj и expr подставляются в динамический SQL - как tbl/bdate в pr_check_bd4ds. obj
+-- обязан выглядеть как схема.таблица, а expr не должен содержать ';': правило, которое
+-- этого не проходит, пропускается и попадает в счётчик skipped. Это защита от опечатки и
+-- от многооператорного текста, а не от злого умысла: expr по замыслу произвольное
+-- выражение бизнес-даты, и настоящая граница доверия - у кого есть права править
+-- параметры потоков в CTL.
+--
+-- Время серверное: и now(), и граница bck_end берутся в часовом поясе сессии. Если
+-- сервер живёт не в московском времени, границу задавать с поправкой.
 
 declare 
     m_txt text;
@@ -55,6 +62,7 @@ declare
     end_id int4;
     m_res int4 = 1;
     new_cnt int4 = 0;
+    bad_cnt int4 = 0;
 
     r record;
     r_jsn json;
@@ -98,6 +106,10 @@ begin
         where coalesce(a.deleted, false) = false
         distributed randomly;
 
+        -- Нечитаемое правило молча пропадать не должно: считаем и показываем в msg,
+        -- иначе опечатка в параметре выглядит как "алертов нет".
+        select count(1) into bad_cnt from tmp_alert_rule
+         where rule_txt is not null and not is_valid_json(rule_txt);
         delete from tmp_alert_rule where rule_txt is null or not is_valid_json(rule_txt);
         delete from tmp_alert_rule where grp is not null and coalesce(alert_grp, '') <> grp;
 
@@ -107,7 +119,7 @@ begin
             period_ts timestamp, msg text, jsn json
         ) on commit drop distributed randomly;
 
-        for r in select * from tmp_alert_rule order by wf_name loop
+        for r in select wf_id, wf_name, rule_txt, alert_grp from tmp_alert_rule order by wf_name loop
             r_jsn = r.rule_txt::json;
             r_kind = coalesce(nullif(r_jsn->>'kind', ''), 'daily');
             last_dt = null;
@@ -139,7 +151,8 @@ begin
                 r_lag = coalesce(nullif(r_jsn->>'lag', ''), '0 day')::interval;
 
                 -- Последний наступивший дедлайн. Перебором по календарю: так все виды,
-                -- включая "последнее число квартала", считаются одной формулой.
+                -- включая "последнее число квартала", считаются одной формулой. 400 дней -
+                -- запас к годовому правилу: между двумя его наступлениями максимум 366.
                 select max(d + r_at) into per_ts
                 from generate_series(current_date - 400, current_date, '1 day'::interval) d
                 where ( r_kind = 'daily'
@@ -153,6 +166,12 @@ begin
                   and d + r_at <= now();
 
                 if per_ts is null then
+                    bad_cnt = bad_cnt + 1;   -- вид правила неизвестен
+                    continue;
+                end if;
+                if coalesce(r_jsn->>'obj', '') !~ '^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$'
+                   or coalesce(r_jsn->>'expr', '') ~ ';' then
+                    bad_cnt = bad_cnt + 1;
                     continue;
                 end if;
                 need_dt = (per_ts - r_lag)::date;
@@ -178,7 +197,7 @@ begin
 
         -- Заводим только то, чего в этом периоде ещё не было.
         insert into tb_ctl_alerts (ts, wf_id, wf_name, alert_grp, alert_key, period_ts, res, msg, jsn)
-        select now(), a.wf_id, a.wf_name, a.alert_grp, a.alert_key, a.period_ts, -6, a.msg, a.jsn
+        select clock_timestamp(), a.wf_id, a.wf_name, a.alert_grp, a.alert_key, a.period_ts, -6, a.msg, a.jsn
         from tmp_alert_new a
         where not exists (
             select 1 from tb_ctl_alerts b
@@ -196,6 +215,9 @@ begin
               and a.reacted_ts is null;
         else
             m_txt = 'no new alerts';
+        end if;
+        if bad_cnt > 0 then
+            m_txt = format('%s, %s rule(s) skipped', m_txt, bad_cnt);
         end if;
 
         -- В отчёт идут все алерты за окно, свежие сверху.
@@ -216,11 +238,17 @@ begin
         style = pr_mail_style();
         html = format('<div style="color:%1$s"><h2> CTL Alerts %2$s </h2><h4> %3$s </h4></div>'
             , case when new_cnt > 0 then 'red' else 'green' end, coalesce(grp, 'all'), m_txt);
-        html = concat(html, pr_tbl2html('tmp_alerts', 'CTL Alerts', 'order by ts desc', style));
+        html = concat(html, pr_tbl2html('tmp_alerts', 'CTL Alerts', 'order by ts desc, wf_name', style));
 
         mail_id = pr_swf_log_action('CTL Alerts', 'mail', json_build_object('len', length(html), 'html', html));
         end_id = pr_swf_log_action('end', 'mail', null, mail_id);
         mail_txt = pr_send_mail(mail_id::text);
+        -- pr_send_mail при своей ошибке отдаёт голый текст, а не JSON. Разбирать его нечем,
+        -- но терять из-за этого сам алерт нельзя: он уже заведён и отреагирован.
+        if not is_valid_json(coalesce(mail_txt, '')) then
+            m_txt = format('%s (mail: %s)', m_txt, left(coalesce(mail_txt, 'null'), 200));
+            mail_txt = '{}';
+        end if;
 
         -- res и msg свои, остальное - от pr_send_mail (id, ts, report, html).
         m_jsn = (
