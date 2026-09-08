@@ -278,4 +278,4 @@ $body$
 EXECUTE ON ANY;
 
 -- DEFAULT в сигнатуре COMMENT ON недопустим, как и в DROP FUNCTION — только типы.
-COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'Алерты Пакетной выгрузки. Сверяет свежесть поставок с правилами из параметров потоков CTL (wf_alert, wf_alert_group), заводит новые алерты в tb_ctl_alerts и возвращает res = -6 с отчётом, если в этом вызове появился хотя бы один новый; иначе res = 1. Реагирует один раз за период правила, в отчёт включает все алерты окна, свежие сверху. Зовётся CTL раз в 15 минут; письмо рассылает CTL по statusNotifications — Greenplum почту не отправляет. Аргументы: группа (NULL — все), граница воскресного окна бэкапа, окно отчёта. v1.1 (2026-09-07), Чуркин Николай';
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'Алерты Пакетной выгрузки. v1.1';
