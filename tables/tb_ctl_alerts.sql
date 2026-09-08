@@ -1,5 +1,5 @@
 -- E360-6367. Заведённые алерты потоков CTL.
--- 2026-09-08 10:24 MSK, v1.1, Чуркин Николай
+-- 2026-09-08 10:24 MSK, v1.2, Чуркин Николай
 --
 -- Распределение случайное: значений wf_id десятки, а сегментов в бою 200 - хэш по
 -- нему сложил бы всю таблицу на пятую часть узлов.
@@ -7,8 +7,12 @@
 -- Отметки реакции нет намеренно. Реакция - это возврат res = -6 из того же вызова,
 -- который завёл строку, так что отдельная колонка всегда повторяла бы ts. Заодно из
 -- функции ушёл update: в GP он держит строки до конца транзакции, а тут хватает insert.
+--
+-- if not exists: скрипт выкладки идемпотентен, повторный прогон таблицу не трогает.
+-- Оборотная сторона - структуру он и не поправит: если колонки менялись, таблицу
+-- надо снести вручную (и потерять историю) либо править alter'ом.
 
-CREATE TABLE s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts (
+CREATE TABLE if not exists s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts (
 	ts timestamp without time zone not null DEFAULT clock_timestamp(),
 	wf_id bigint null,
 	wf_name text null,
@@ -22,7 +26,7 @@ CREATE TABLE s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts (
 WITH (appendonly=true, orientation=column, compresstype=zstd)
 DISTRIBUTED RANDOMLY;
 
-COMMENT ON TABLE s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts IS 'Заведённые алерты потоков CTL. v1.1, 2026-09-08';
+COMMENT ON TABLE s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts IS 'Заведённые алерты потоков CTL. v1.2, 2026-09-08';
 COMMENT ON COLUMN s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts.ts IS 'Время заведения алерта';
 COMMENT ON COLUMN s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts.wf_id IS 'Идентификатор потока в CTL';
 COMMENT ON COLUMN s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts.wf_name IS 'Имя потока';
