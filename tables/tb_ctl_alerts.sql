@@ -1,4 +1,4 @@
--- E360-6367. Заведённые алерты потоков CTL.
+-- E360-6367. Заведённые SLA алерты потоков CTL.
 -- 2026-09-08 10:24 MSK, v1.2, Чуркин Николай
 --
 -- Распределение случайное: значений wf_id десятки, а сегментов в бою 200 - хэш по
@@ -26,7 +26,7 @@ CREATE TABLE if not exists s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts (
 WITH (appendonly=true, orientation=column, compresstype=zstd)
 DISTRIBUTED RANDOMLY;
 
-COMMENT ON TABLE s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts IS 'Заведённые алерты потоков CTL. v1.2, 2026-09-08';
+COMMENT ON TABLE s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts IS 'Заведённые SLA алерты потоков CTL. v1.2, 2026-09-08';
 COMMENT ON COLUMN s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts.ts IS 'Время заведения алерта';
 COMMENT ON COLUMN s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts.wf_id IS 'Идентификатор потока в CTL';
 COMMENT ON COLUMN s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts.wf_name IS 'Имя потока';
