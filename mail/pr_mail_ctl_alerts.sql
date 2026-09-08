@@ -5,7 +5,7 @@ CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(grp text DEFAULT NU
 as $body$
 
 -- E360-6367. Алерты потоков CTL.
--- 2026-09-08 11:05 MSK, v1.3, Чуркин Николай
+-- 2026-09-08 11:40 MSK, v1.4, Чуркин Николай
 --
 -- Механизм общий: правило вешается на любой поток CTL. Тикет пришёл от Пакетной
 -- выгрузки, но ни функция, ни таблица к ней не привязаны - не сужайте описание обратно.
@@ -18,47 +18,57 @@ as $body$
 -- Правила живут в параметрах потоков CTL и читаются из vw_log_ctl_wf - так же, как эта
 -- вьюха достаёт из параметров wf_interval. Проброс через pr_swf_start_ctl не нужен.
 --   wf_alert_group - имя группы, по нему фильтрует аргумент grp (NULL - все группы);
---   wf_alert       - JSON-правило. Режима три:
---     1. дедлайн + данные  - есть lag: к дедлайну нужны данные не старше "дедлайн - lag";
---     2. дедлайн + событие - lag нет: к дедлайну поток должен был отдать статистику,
---                            бизнес-дату не смотрим и obj не нужен;
+--   wf_alert       - КОГДА проверять: вид, дедлайн, номер статистики;
+--   wf_alert_data  - ЧТО сверять в данных. Параметр необязательный, и само его наличие
+--                    включает проверку данных. Нет его - смотрим только событие.
+--
+--   Отсюда три режима:
+--     1. дедлайн + данные  - есть wf_alert_data: к дедлайну нужны данные не старше
+--                            "дедлайн - lag";
+--     2. дедлайн + событие - wf_alert_data нет: к дедлайну поток должен был отдать
+--                            статистику, бизнес-дату не смотрим;
 --     3. хартбит           - kind heartbeat: статистика приходит не реже чем раз в every,
---                            календаря нет вовсе.
---     {"kind":"daily",     "at":"09:00", "lag":"1 day",  "obj":"<схема.таблица>"}
---     {"kind":"workdays",  "at":"13:00", "lag":"10 day", "obj":"..."}   -- ПН-ПТ
---     {"kind":"weekly",    "at":"09:00", "dow":1, "lag":"1 day", "obj":"..."}
---     {"kind":"monthly",   "day":20,     "lag":"1 mon 19 day", "obj":"..."}
---     {"kind":"yearly",    "month":12, "day":16, "lag":"1 day", "obj":"..."}
---     {"kind":"quarterly", "day":"last", "lag":"0 day",  "obj":"..."}
---     {"kind":"heartbeat", "stat":1,  "every":"1 hour"}   -- изменение данных
---     {"kind":"heartbeat", "stat":12, "every":"1 day"}    -- 12 статистика
---     {"kind":"daily",     "at":"09:00"}                 -- событие: поток отработал к 09:00
---     {"kind":"weekly",    "at":"09:00", "dow":1, "stat":12}  -- событие по своей статистике
---   lag - НА СКОЛЬКО ДАННЫМ РАЗРЕШЕНО ОТСТАВАТЬ ОТ ДЕДЛАЙНА, то есть Т-N из тикета.
---   Само его наличие и выбирает между режимами 1 и 2: нет lag - данные не проверяются
---   вовсе, спрашиваем только про событие. Нулём это не подменяется: "lag":"0 day" - это
---   режим данных с требованием за сам день дедлайна, вещь совсем другая.
---   Считается так:
+--                            календаря нет вовсе; wf_alert_data здесь не смотрится.
+--
+--   wf_alert:
+--     {"kind":"daily",     "at":"09:00"}
+--     {"kind":"workdays",  "at":"13:00"}                      -- ПН-ПТ
+--     {"kind":"weekly",    "at":"09:00", "dow":1}             -- 1 = понедельник
+--     {"kind":"monthly",   "day":20}
+--     {"kind":"yearly",    "month":12, "day":16}
+--     {"kind":"quarterly", "day":"last"}
+--     {"kind":"heartbeat", "stat":1,  "every":"1 hour"}       -- изменение данных
+--     {"kind":"heartbeat", "stat":12, "every":"1 day"}        -- 12 статистика
+--     stat в календарных видах задаёт статистику для режима события, по умолчанию 1.
+--
+--   wf_alert_data:
+--     {"lag":"1 day",        "obj":"<схема.таблица>"}
+--     {"lag":"1 mon 19 day", "obj":"..."}                     -- месячное, см. ниже
+--     {"lag":"0 day",        "obj":"...", "field":"key_max"}
+--     {"lag":"3 day",        "obj":"...", "expr":"max(report_dt)"}
+--     obj   - откуда мерить свежесть, обязателен;
+--     lag   - НА СКОЛЬКО ДАННЫМ РАЗРЕШЕНО ОТСТАВАТЬ ОТ ДЕДЛАЙНА, то есть Т-N из тикета;
+--             по умолчанию "0 day" - данные за сам день дедлайна;
+--     field - колонка tb_log_workflow_stat, по которой меряем (по умолчанию data_max);
+--     expr  - выражение бизнес-даты прямо по объекту, если поток не идёт через движок и
+--             строк в tb_log_workflow_stat у него нет (ue_aimodel_rating, vw_predict_buckets).
+--
+--   Проверка данных считается так:
 --       need  = дедлайн - lag              -- дата, за которую данные обязаны быть
 --       алерт = последняя бизнес-дата объекта < need
---   Пример: daily at 09:00, lag "1 day" - сегодня в 09:00 обязаны быть данные за вчера;
---   лежат за позавчера - алерт. lag "0 day" требует данные за сам день дедлайна.
+--   Пример: wf_alert {"kind":"daily","at":"09:00"} и wf_alert_data {"lag":"1 day",...} -
+--   сегодня в 09:00 обязаны быть данные за вчера; лежат за позавчера - алерт.
 --   lag НЕ задаёт, как часто проверять: частоту задаёт kind, дедлайн - at/day/month/dow.
 --
---   Режим события (lag нет): статистика с номером stat (по умолчанию 1 - изменение данных)
---   должна была прийти после ПРОШЛОГО дедлайна. Пришла в 09:30 при дедлайне 09:00 - молчим:
---   период закрыт, как и в режиме данных, где не важно, когда именно данные подъехали.
+--   Режим события: статистика с номером stat должна была прийти после ПРОШЛОГО дедлайна.
+--   Пришла в 09:30 при дедлайне 09:00 - молчим: период закрыт, как и в режиме данных, где
+--   не важно, когда именно данные подъехали.
 --
 --   Осторожно с месячными и квартальными объектами. Если бизнес-дата у них - метка периода
 --   (первое число месяца), сравнение идёт с меткой, а не с днём загрузки, и lag надо
 --   доводить до неё. "К 20 числу нужен прошлый месяц" - это lag "1 mon 19 day"
 --   (20 сентября минус столько = 1 августа), а не "11 day": с ним need упрётся в 9 сентября,
 --   августовская метка окажется старше, и алерт будет срабатывать каждый месяц впустую.
---
---   Необязательные поля календарных видов:
---     field - колонка tb_log_workflow_stat, по которой меряем свежесть (по умолчанию data_max);
---     expr  - выражение бизнес-даты прямо по объекту, если поток не идёт через движок и
---             строк в tb_log_workflow_stat у него нет (ue_aimodel_rating, vw_predict_buckets).
 --
 -- Cron не используем намеренно: в plpgsql пришлось бы писать свой разбор, а "последнее
 -- число квартала" им всё равно не выражается. Явные поля покрывают весь список тикета.
@@ -98,6 +108,7 @@ declare
 
     r record;
     r_jsn json;
+    d_jsn json;
     r_kind text;
     r_at time;
     r_lag interval;
@@ -134,6 +145,8 @@ begin
              , (select j.value->>'prior_value' from jsonb_array_elements(a.msg->'wf'->'param') j
                  where j.value->>'param' = 'wf_alert' limit 1) as rule_txt
              , (select j.value->>'prior_value' from jsonb_array_elements(a.msg->'wf'->'param') j
+                 where j.value->>'param' = 'wf_alert_data' limit 1) as data_txt
+             , (select j.value->>'prior_value' from jsonb_array_elements(a.msg->'wf'->'param') j
                  where j.value->>'param' = 'wf_alert_group' limit 1) as alert_grp
         from vw_log_ctl_wf a
         where coalesce(a.deleted, false) = false
@@ -142,8 +155,11 @@ begin
         -- Нечитаемое правило молча пропадать не должно: считаем и показываем в msg,
         -- иначе опечатка в параметре выглядит как "алертов нет".
         select count(1) into bad_cnt from tmp_alert_rule
-         where rule_txt is not null and not is_valid_json(rule_txt);
-        delete from tmp_alert_rule where rule_txt is null or not is_valid_json(rule_txt);
+         where (rule_txt is not null and not is_valid_json(rule_txt))
+            or (data_txt is not null and not is_valid_json(data_txt));
+        delete from tmp_alert_rule
+         where rule_txt is null or not is_valid_json(rule_txt)
+            or (data_txt is not null and not is_valid_json(data_txt));
         delete from tmp_alert_rule where grp is not null and coalesce(alert_grp, '') <> grp;
 
         drop table if exists tmp_alert_new;
@@ -152,7 +168,7 @@ begin
             period_ts timestamp, msg text, jsn json
         ) on commit drop distributed randomly;
 
-        for r in select wf_id, wf_name, rule_txt, alert_grp from tmp_alert_rule order by wf_name loop
+        for r in select wf_id, wf_name, rule_txt, data_txt, alert_grp from tmp_alert_rule order by wf_name loop
             r_jsn = r.rule_txt::json;
             r_kind = coalesce(nullif(r_jsn->>'kind', ''), 'daily');
             last_dt = null;
@@ -207,10 +223,10 @@ begin
                     continue;
                 end if;
 
-                if nullif(r_jsn->>'lag', '') is null then
+                if r.data_txt is null then
                     -- Режим события: дедлайн есть, бизнес-дату не смотрим. Спрашиваем только,
                     -- отдавал ли поток статистику в текущем периоде, то есть после прошлого
-                    -- дедлайна. obj здесь не нужен и не требуется.
+                    -- дедлайна. Параметра wf_alert_data нет - и проверять в данных нечего.
                     select max(a.ts) into last_dt
                     from tb_log_ctl a
                     join vw_log_ctl_loading l on l.id = a.id
@@ -229,19 +245,21 @@ begin
                                                 , 'last', left(last_dt::text, 19)));
                     end if;
                 else
-                    r_lag = (r_jsn->>'lag')::interval;
-                    if coalesce(r_jsn->>'obj', '') !~ '^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$'
-                       or coalesce(r_jsn->>'expr', '') ~ ';' then
+                    -- Режим данных: что именно сверять, лежит в wf_alert_data.
+                    d_jsn = r.data_txt::json;
+                    r_lag = coalesce(nullif(d_jsn->>'lag', ''), '0 day')::interval;
+                    if coalesce(d_jsn->>'obj', '') !~ '^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$'
+                       or coalesce(d_jsn->>'expr', '') ~ ';' then
                         bad_cnt = bad_cnt + 1;
                         continue;
                     end if;
                     need_dt = (per_ts - r_lag)::date;
 
-                    if nullif(r_jsn->>'expr', '') is not null then
-                        sql = format('select (%s)::timestamp from %s', r_jsn->>'expr', r_jsn->>'obj');
+                    if nullif(d_jsn->>'expr', '') is not null then
+                        sql = format('select (%s)::timestamp from %s', d_jsn->>'expr', d_jsn->>'obj');
                     else
                         sql = format('select max(%I)::timestamp from tb_log_workflow_stat where wf_obj = %L'
-                                   , coalesce(nullif(r_jsn->>'field', ''), 'data_max'), r_jsn->>'obj');
+                                   , coalesce(nullif(d_jsn->>'field', ''), 'data_max'), d_jsn->>'obj');
                     end if;
                     execute sql into last_dt;
 
@@ -251,7 +269,8 @@ begin
                             , need_dt, coalesce(left(last_dt::text, 19), 'никогда'));
                         insert into tmp_alert_new
                         values (r.wf_id, r.wf_name, r.alert_grp, r_key, per_ts, r_msg
-                              , json_build_object('rule', r_jsn, 'need', need_dt, 'last', left(last_dt::text, 19)));
+                              , json_build_object('rule', r_jsn, 'data', d_jsn
+                                                , 'need', need_dt, 'last', left(last_dt::text, 19)));
                     end if;
                 end if;
             end if;
@@ -336,4 +355,4 @@ $body$
 EXECUTE ON ANY;
 
 -- DEFAULT в сигнатуре COMMENT ON недопустим, как и в DROP FUNCTION — только типы.
-COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'Алерты потоков CTL. v1.3, 2026-09-08';
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'Алерты потоков CTL. v1.4, 2026-09-08';
