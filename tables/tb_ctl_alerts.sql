@@ -1,4 +1,4 @@
--- E360-6367. Заведённые алерты Пакетной выгрузки и отметки реакции.
+-- E360-6367. Заведённые алерты потоков CTL и отметки реакции.
 -- 2026-09-07 18:34 MSK, v1.0, Чуркин Николай
 
 CREATE TABLE s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts (
@@ -16,7 +16,7 @@ CREATE TABLE s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts (
 WITH (appendonly=false)
 DISTRIBUTED BY (wf_id);
 
-COMMENT ON TABLE s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts IS 'Заведённые алерты Пакетной выгрузки. v1.0, 2026-09-07';
+COMMENT ON TABLE s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts IS 'Заведённые алерты потоков CTL. v1.0, 2026-09-07';
 COMMENT ON COLUMN s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts.ts IS 'Время заведения алерта';
 COMMENT ON COLUMN s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts.wf_id IS 'Идентификатор потока в CTL';
 COMMENT ON COLUMN s_grnplm_vd_hr_edp_srv_wf.tb_ctl_alerts.wf_name IS 'Имя потока';

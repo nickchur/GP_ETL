@@ -4,7 +4,10 @@ CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(grp text DEFAULT NU
 	VOLATILE
 as $body$
 
--- E360-6367. Алерты Пакетной выгрузки.
+-- E360-6367. Алерты потоков CTL.
+--
+-- Механизм общий: правило вешается на любой поток CTL. Тикет пришёл от Пакетной
+-- выгрузки, но ни функция, ни таблица к ней не привязаны — не сужайте описание обратно.
 -- 2026-09-07 21:47 MSK, v1.1, Чуркин Николай
 --
 -- Функцию зовёт CTL раз в 15 минут. Появился новый алерт - возвращаем res = -6 и отчёт;
@@ -278,4 +281,4 @@ $body$
 EXECUTE ON ANY;
 
 -- DEFAULT в сигнатуре COMMENT ON недопустим, как и в DROP FUNCTION — только типы.
-COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'Алерты Пакетной выгрузки. v1.1, 2026-09-07';
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'Алерты потоков CTL. v1.1, 2026-09-07';
