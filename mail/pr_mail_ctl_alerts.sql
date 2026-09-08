@@ -5,7 +5,7 @@ CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(grp text DEFAULT NU
 as $body$
 
 -- E360-6367. SLA алерты потоков CTL.
--- 2026-09-08 12:15 MSK, v1.5, Чуркин Николай
+-- 2026-09-08 13:20 MSK, v1.6, Чуркин Николай
 --
 -- Механизм общий: правило вешается на любой поток CTL. Тикет пришёл от Пакетной
 -- выгрузки, но ни функция, ни таблица к ней не привязаны - не сужайте описание обратно.
@@ -44,11 +44,13 @@ as $body$
 --     stat в календарных видах задаёт статистику для режима события, по умолчанию 1.
 --
 --   wf_alert_data:
---     {"lag":"1 day",        "obj":"<схема.таблица>"}
+--     {"lag":"1 day",        "obj":"stg.tb_incidentsm1"}      -- короткая схема
+--     {"lag":"1 day",        "obj":"s_grnplm_vd_hr_edp_stg.tb_incidentsm1"}  -- и полная
 --     {"lag":"1 mon 19 day", "obj":"..."}                     -- месячное, см. ниже
 --     {"lag":"0 day",        "obj":"...", "field":"key_max"}
 --     {"lag":"3 day",        "obj":"...", "expr":"max(report_dt)"}
---     obj   - откуда мерить свежесть, обязателен;
+--     obj   - откуда мерить свежесть, обязателен. Схему можно писать коротко:
+--             "stg.tb_addresses" равносильно "s_grnplm_vd_hr_edp_stg.tb_addresses";
 --     lag   - НА СКОЛЬКО ДАННЫМ РАЗРЕШЕНО ОТСТАВАТЬ ОТ ДЕДЛАЙНА, то есть Т-N из тикета;
 --             по умолчанию "0 day" - данные за сам день дедлайна;
 --     field - колонка tb_log_workflow_stat, по которой меряем (по умолчанию data_max);
@@ -116,6 +118,7 @@ declare
     r_lag interval;
     r_every interval;
     r_key text;
+    r_obj text;
     r_msg text;
 
     last_dt timestamp;
@@ -257,13 +260,21 @@ begin
                         bad_cnt = bad_cnt + 1;
                         continue;
                     end if;
+                    -- Схему можно писать коротко: stg.tb_addresses разворачивается в
+                    -- s_grnplm_vd_hr_edp_stg.tb_addresses - тем же правилом, что sch в
+                    -- pr_swf_start_ctl. Полное имя оставляем как есть. Сравнение по левым 19
+                    -- символам, а не like: в like подчёркивание было бы шаблоном.
+                    r_obj = d_jsn->>'obj';
+                    if left(r_obj, 19) <> 's_grnplm_vd_hr_edp_' then
+                        r_obj = 's_grnplm_vd_hr_edp_' || r_obj;
+                    end if;
                     need_dt = (per_ts - r_lag)::date;
 
                     if nullif(d_jsn->>'expr', '') is not null then
-                        sql = format('select (%s)::timestamp from %s', d_jsn->>'expr', d_jsn->>'obj');
+                        sql = format('select (%s)::timestamp from %s', d_jsn->>'expr', r_obj);
                     else
                         sql = format('select max(%I)::timestamp from tb_log_workflow_stat where wf_obj = %L'
-                                   , coalesce(nullif(d_jsn->>'field', ''), 'data_max'), d_jsn->>'obj');
+                                   , coalesce(nullif(d_jsn->>'field', ''), 'data_max'), r_obj);
                     end if;
                     execute sql into last_dt;
 
@@ -273,7 +284,7 @@ begin
                             , need_dt, coalesce(left(last_dt::text, 19), 'никогда'));
                         insert into tmp_alert_new
                         values (r.wf_id, r.wf_name, r.alert_grp, r_key, per_ts, r_msg
-                              , json_build_object('rule', r_jsn, 'data', d_jsn
+                              , json_build_object('rule', r_jsn, 'data', d_jsn, 'obj', r_obj
                                                 , 'need', need_dt, 'last', left(last_dt::text, 19)));
                     end if;
                 end if;
@@ -359,4 +370,4 @@ $body$
 EXECUTE ON ANY;
 
 -- DEFAULT в сигнатуре COMMENT ON недопустим, как и в DROP FUNCTION — только типы.
-COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'SLA алерты потоков CTL. v1.5, 2026-09-08';
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'SLA алерты потоков CTL. v1.6, 2026-09-08';
