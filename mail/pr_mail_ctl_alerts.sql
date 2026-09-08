@@ -8,7 +8,7 @@ as $body$
 --
 -- Механизм общий: правило вешается на любой поток CTL. Тикет пришёл от Пакетной
 -- выгрузки, но ни функция, ни таблица к ней не привязаны — не сужайте описание обратно.
--- 2026-09-07 21:47 MSK, v1.1, Чуркин Николай
+-- 2026-09-08 10:24 MSK, v1.2, Чуркин Николай
 --
 -- Функцию зовёт CTL раз в 15 минут. Появился новый алерт - возвращаем res = -6 и отчёт;
 -- письмо по statusNotifications рассылает сам CTL. Почту отсюда не шлём: в Greenplum нет
@@ -199,7 +199,10 @@ begin
             end if;
         end loop;
 
-        -- Заводим только то, чего в этом периоде ещё не было.
+        -- Заводим только то, чего в этом периоде ещё не было. Отдельной отметки реакции
+        -- нет: реакция - это возврат res = -6 из этого же вызова, и сам факт строки её
+        -- означает. Update не делаем намеренно - в GP он держит строки до конца
+        -- транзакции, а здесь всё выражается вставкой.
         insert into tb_ctl_alerts (ts, wf_id, wf_name, alert_grp, alert_key, period_ts, res, msg, jsn)
         select clock_timestamp(), a.wf_id, a.wf_name, a.alert_grp, a.alert_key, a.period_ts, -6, a.msg, a.jsn
         from tmp_alert_new a
@@ -212,11 +215,6 @@ begin
         if new_cnt > 0 then
             m_res = -6;
             m_txt = format('%s new alert(s)', new_cnt);
-            -- Реакция только по своим строкам: чужую группу, ждущую своего вызова, не трогаем.
-            update tb_ctl_alerts a set reacted_ts = now()
-            from tmp_alert_new b
-            where a.wf_id = b.wf_id and a.alert_key = b.alert_key and a.period_ts = b.period_ts
-              and a.reacted_ts is null;
         else
             m_txt = 'no new alerts';
         end if;
@@ -232,7 +230,6 @@ begin
              , a.alert_grp
              , a.alert_key
              , left(a.period_ts::text, 16) as period
-             , case when a.reacted_ts is null then 'new' else left(a.reacted_ts::text, 19) end as reacted
              , a.msg
         from tb_ctl_alerts a
         where a.ts > now() - hist
@@ -281,4 +278,4 @@ $body$
 EXECUTE ON ANY;
 
 -- DEFAULT в сигнатуре COMMENT ON недопустим, как и в DROP FUNCTION — только типы.
-COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'Алерты потоков CTL. v1.1, 2026-09-07';
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'Алерты потоков CTL. v1.2, 2026-09-08';
