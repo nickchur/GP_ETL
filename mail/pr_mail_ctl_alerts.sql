@@ -5,7 +5,7 @@ CREATE FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(grp text DEFAULT NU
 as $body$
 
 -- E360-6367. Алерты потоков CTL.
--- 2026-09-08 11:40 MSK, v1.4, Чуркин Николай
+-- 2026-09-08 12:15 MSK, v1.5, Чуркин Николай
 --
 -- Механизм общий: правило вешается на любой поток CTL. Тикет пришёл от Пакетной
 -- выгрузки, но ни функция, ни таблица к ней не привязаны - не сужайте описание обратно.
@@ -17,7 +17,9 @@ as $body$
 --
 -- Правила живут в параметрах потоков CTL и читаются из vw_log_ctl_wf - так же, как эта
 -- вьюха достаёт из параметров wf_interval. Проброс через pr_swf_start_ctl не нужен.
---   wf_alert_group - имя группы, по нему фильтрует аргумент grp (NULL - все группы);
+--   wf_alert_group - имя группы, по нему фильтрует аргумент grp. Параметра нет - группа
+--                    пустая строка, а не NULL, поэтому такие потоки берутся вызовом
+--                    pr_mail_ctl_alerts(''). Аргумент NULL - все группы разом;
 --   wf_alert       - КОГДА проверять: вид, дедлайн, номер статистики;
 --   wf_alert_data  - ЧТО сверять в данных. Параметр необязательный, и само его наличие
 --                    включает проверку данных. Нет его - смотрим только событие.
@@ -146,8 +148,8 @@ begin
                  where j.value->>'param' = 'wf_alert' limit 1) as rule_txt
              , (select j.value->>'prior_value' from jsonb_array_elements(a.msg->'wf'->'param') j
                  where j.value->>'param' = 'wf_alert_data' limit 1) as data_txt
-             , (select j.value->>'prior_value' from jsonb_array_elements(a.msg->'wf'->'param') j
-                 where j.value->>'param' = 'wf_alert_group' limit 1) as alert_grp
+             , coalesce((select j.value->>'prior_value' from jsonb_array_elements(a.msg->'wf'->'param') j
+                 where j.value->>'param' = 'wf_alert_group' limit 1), '') as alert_grp
         from vw_log_ctl_wf a
         where coalesce(a.deleted, false) = false
         distributed randomly;
@@ -160,7 +162,9 @@ begin
         delete from tmp_alert_rule
          where rule_txt is null or not is_valid_json(rule_txt)
             or (data_txt is not null and not is_valid_json(data_txt));
-        delete from tmp_alert_rule where grp is not null and coalesce(alert_grp, '') <> grp;
+        -- Группа нормализована при сборе, поэтому сравнение прямое: вызов с '' берёт
+        -- ровно те потоки, у которых wf_alert_group не задан.
+        delete from tmp_alert_rule where grp is not null and alert_grp <> grp;
 
         drop table if exists tmp_alert_new;
         create temp table tmp_alert_new (
@@ -310,7 +314,7 @@ begin
              , a.msg
         from tb_ctl_alerts a
         where a.ts > now() - hist
-          and (grp is null or a.alert_grp = grp)
+          and (grp is null or coalesce(a.alert_grp, '') = grp)
         distributed randomly;
 
         style = pr_mail_style();
@@ -355,4 +359,4 @@ $body$
 EXECUTE ON ANY;
 
 -- DEFAULT в сигнатуре COMMENT ON недопустим, как и в DROP FUNCTION — только типы.
-COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'Алерты потоков CTL. v1.4, 2026-09-08';
+COMMENT ON FUNCTION s_grnplm_vd_hr_edp_srv_wf.pr_mail_ctl_alerts(text, time without time zone, interval) IS 'Алерты потоков CTL. v1.5, 2026-09-08';
